@@ -7,7 +7,7 @@
 ***tpfplotter*** is written in Python2.7 (sorry!), but it will be updated to Python3 as soon as I have some time...
 
 ## Usage
-Using tpfplotter is really easy:
+Using tpfplotter is really easy, you just need to know the TIC number:
 
 ```
 python tpfplotter.py 150428135 --maglim 6
