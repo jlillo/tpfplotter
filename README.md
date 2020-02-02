@@ -22,6 +22,9 @@ Alternatively if you have a list of TIC values just type:
 python tpfplotter.py list_of_tics.lis --LIST --maglim 6
 ```
 
+![](https://raw.githubusercontent.com/jlillobox/projectnametpfplotter/TPF_Gaia_TIC150428135.jpg)
+
+
 ## Papers using tpfplotter
 Several papers involving different sceince cases have already used TPF plotter. A sample of them are highlighted here:
 
