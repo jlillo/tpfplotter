@@ -36,12 +36,12 @@ If you use tpfplotter, you have two options to give credit to it:
 
 - If I (J. Lillo-Box) am co-author of your paper, you can use the following sentence to the acknowledgments section:
 ```
-This work made use of \texttt{tpfplotter}, which also made use of the python packages \texttt{astropy}, \texttt{lightkurve}, \texttt{matplotlib} and \texttt{numpy}.
+> This work made use of \texttt{tpfplotter}, which also made use of the python packages \texttt{astropy}, \texttt{lightkurve}, \texttt{matplotlib} and \texttt{numpy}.
 ```
 
 - If I am not co-author of your work that is fine but please add the following entence to the acknowledgments section:
 ```
-This work made use of \texttt{tpfplotter} by J. Lillo-Box (publicly available in www.github.com/jlillobox/tpfplotter), which also made use of the python packages \texttt{astropy}, \texttt{lightkurve}, \texttt{matplotlib} and \texttt{numpy}.
+> This work made use of \texttt{tpfplotter} by J. Lillo-Box (publicly available in www.github.com/jlillobox/tpfplotter), which also made use of the python packages \texttt{astropy}, \texttt{lightkurve}, \texttt{matplotlib} and \texttt{numpy}.
 ```
 
 
