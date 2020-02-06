@@ -36,6 +36,9 @@ def cli():
     parser.add_argument("tic", help="TIC number")
     parser.add_argument("-L", "--LIST", help="Only fit the LC", action="store_true")
     parser.add_argument("--maglim", default=5., help="Maximum magnitude contrast respect to TIC")
+    parser.add_argument("--sector", default=None, help="Select Sector if more than one")
+    parser.add_argument("--gid", default=None, help="Gaia ID")
+    parser.add_argument("--gmag", default=None, help="Gaia mag")
     args = parser.parse_args()
     return args
 
@@ -90,7 +93,7 @@ def plot_orientation(tpf):
 	"""
 	mean_tpf = np.mean(tpf.flux,axis=0)
 	nx,ny = np.shape(mean_tpf)
-	x0,y0 = tpf.column+int(0.9*nx),tpf.row+int(0.9*nx)
+	x0,y0 = tpf.column+int(0.9*nx),tpf.row+int(0.2*nx)
 	# East
 	tmp =  tpf.get_coordinates()
 	ra00, dec00 = tmp[0][0][0][0], tmp[1][0][0][0]
@@ -124,7 +127,13 @@ def get_gaia_data(ra, dec):
     Vizier.ROW_LIMIT = -1
     result = Vizier.query_region(c1, catalog=["I/345/gaia2"],
                                  radius=Angle(10., "arcsec"))
-    result = result["I/345/gaia2"]
+    try:
+    	result = result["I/345/gaia2"]
+    except:
+    	print 'Not in Gaia DR2. If you know the Gaia ID and Gmag, try the options --gid and --gmag.'
+    	print 'Exiting without finishing...'
+    	sys.exit()
+    	
     no_targets_found_message = ValueError('Either no sources were found in the query region '
                                           'or Vizier is unavailable')
     too_few_found_message = ValueError('No sources found closer than 1 arcsec to TPF coordinates')
@@ -165,12 +174,19 @@ if __name__ == "__main__":
 	else:
 		tics = np.array([args.tic])
 
-	#for name, tic, mag,gaia_id in zip(names,tics, mags, gaia_ids):
 	for tic in tics:
 		print tic+'...'
 		ra,dec = get_coord(tic)
-		gaia_id, mag = get_gaia_data(ra, dec)
-		tpf = search_targetpixelfile("TIC "+tic).download()
+	
+		if args.gid != None:
+			gaia_id, mag = args.gid, np.float(args.gmag)
+		else:
+			gaia_id, mag = get_gaia_data(ra, dec)
+	
+		if args.sector != None:
+			tpf = search_targetpixelfile("TIC "+tic, sector=int(args.sector)).download()
+		else:
+			tpf = search_targetpixelfile("TIC "+tic).download()
 		
 		fig = plt.figure(figsize=(6.93, 5.5))
 		gs = gridspec.GridSpec(1,3, height_ratios=[1], width_ratios=[1,0.05,0.01])

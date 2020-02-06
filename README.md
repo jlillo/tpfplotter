@@ -21,6 +21,11 @@ python tpfplotter.py list_of_tics.lis --LIST --maglim 6
 
 ![alt text](https://github.com/jlillo/tpfplotter/blob/master/TPF_Gaia_TIC150428135.jpg)
 
+In case ***tpfplotter*** is not able to find the target in the Gaia catalog, you can overcome this by providing the Gaia ID and Gmag as input in the following way:
+
+```
+python tpfplotter.py 150428135 --maglim 6 --gid UCAC4 123-010026 --gmag 12.07
+```
 
 ## Papers using tpfplotter
 Several papers involving different sceince cases have already used TPF plotter. A sample of them are highlighted here:
