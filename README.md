@@ -27,6 +27,12 @@ In case ***tpfplotter*** is not able to find the target in the Gaia catalog, you
 python tpfplotter.py 150428135 --maglim 6 --gid UCAC4 123-010026 --gmag 12.07
 ```
 
+You can also save the list of Gaia sources in the TPF in a separete ascii file called Gaia_TIC*.dat with the --SAVEGAIA option. This file contains the ID, XY location on the TPF, distance to the target, Gmag and a column flag indicating if the source is inside the aperture mask (=1) or not (=0):
+
+```
+python tpfplotter.py 150428135 --maglim 6 --SAVEGAIA --sector 4
+```
+
 ## Papers using tpfplotter
 Several papers involving different sceince cases have already used TPF plotter. A sample of them are highlighted here:
 

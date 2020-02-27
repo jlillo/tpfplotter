@@ -20,6 +20,8 @@ import astropy.units as u
 from astropy.visualization import SqrtStretch,LinearStretch
 import astropy.visualization as stretching
 from astropy.visualization.mpl_normalize import ImageNormalize
+from astropy.table import Table, Column, MaskedColumn
+from astropy.io import ascii
 from astroquery.mast import Catalogs
 import argparse
 
@@ -35,6 +37,7 @@ def cli():
     parser = argparse.ArgumentParser()
     parser.add_argument("tic", help="TIC number")
     parser.add_argument("-L", "--LIST", help="Only fit the LC", action="store_true")
+    parser.add_argument("-S", "--SAVEGAIA", help="Save Gaia sources", action="store_true")
     parser.add_argument("--maglim", default=5., help="Maximum magnitude contrast respect to TIC")
     parser.add_argument("--sector", default=None, help="Select Sector if more than one")
     parser.add_argument("--gid", default=None, help="Gaia ID")
@@ -184,21 +187,23 @@ if __name__ == "__main__":
 			gaia_id, mag = get_gaia_data(ra, dec)
 	
 		if args.sector != None:
-			tpf = search_targetpixelfile("TIC "+tic, sector=int(args.sector)).download()
+			tpf = search_targetpixelfile("TIC "+tic, sector=int(args.sector), mission='TESS').download()
 		else:
-			tpf = search_targetpixelfile("TIC "+tic).download()
+			tpf = search_targetpixelfile("TIC "+tic, mission='TESS').download()
 		
 		fig = plt.figure(figsize=(6.93, 5.5))
 		gs = gridspec.GridSpec(1,3, height_ratios=[1], width_ratios=[1,0.05,0.01])
 		gs.update(left=0.05, right=0.95, bottom=0.12, top=0.95, wspace=0.01, hspace=0.03)
 		ax1 = plt.subplot(gs[0,0])     
 	
+		# TPF plot 
 		mean_tpf = np.mean(tpf.flux,axis=0)
 		nx,ny = np.shape(mean_tpf)
 		norm = ImageNormalize(stretch=stretching.LogStretch())
 		splot = plt.imshow(np.mean(tpf.flux,axis=0)/1.e4,norm=norm, \
 						extent=[tpf.column,tpf.column+ny,tpf.row,tpf.row+nx],origin='bottom', zorder=0)
-		#splot = plt.pcolormesh(tpf.column+np.arange(ny-1), tpf.row+np.arange(nx-1),np.mean(tpf.flux,axis=0))
+		
+		# Pipeline aperture
 		aperture_mask = tpf.pipeline_mask
 		aperture = tpf._parse_aperture_mask(aperture_mask)
 	
@@ -209,39 +214,44 @@ if __name__ == "__main__":
 												   1, 1, color='tomato', fill=True,alpha=0.4))    
 					ax1.add_patch(patches.Rectangle((j+tpf.column, i+tpf.row),
 												   1, 1, color='tomato', fill=False,alpha=1,lw=2))    
+		
+		# Gaia sources
 		r, res = add_gaia_figure_elements(tpf,magnitude_limit=mag+np.float(args.maglim),targ_mag=mag)    
 		x,y,gaiamags = r
 		x, y, gaiamags=np.array(x)+0.5, np.array(y)+0.5, np.array(gaiamags)
-		size = 128.0 / 2**((gaiamags-mag))
-	
+		size = 128.0 / 2**((gaiamags-mag))	
 		plt.scatter(x,y,s=size,c='red',alpha=0.6, edgecolor=None,zorder = 10)
 	
+		# Gaia source for the target
+		this = np.where(np.array(res['Source']) == int(gaia_id))[0]
+		plt.scatter(x[this],y[this],marker='x',c='white',s=32,zorder = 11)
+
+		# Legend
 		fake_sizes = np.array([mag-2,mag,mag+2,mag+5, mag+8])
 		for f in fake_sizes:
 			size = 128.0 / 2**((f-mag))
 			plt.scatter(0,0,s=size,c='red',alpha=0.6, edgecolor=None,zorder = 10,label = r'$\Delta m=$ '+str(round(f-mag,0)))
 	
 		ax1.legend(fancybox=True, framealpha=0.5)
- 
-		this = np.where(np.array(res['Source']) == int(gaia_id))[0]
-		plt.scatter(x[this],y[this],marker='x',c='white',s=32,zorder = 11)
 	
-		# Labels
+		# Source labels
 		dist = np.sqrt((x-x[this])**2+(y-y[this])**2)
 		dsort = np.argsort(dist)
 		for d,elem in enumerate(dsort):
 			if dist[elem] < 6:
 				plt.text(x[elem]+0.1,y[elem]+0.1,str(d+1),color='white', zorder=100)
 	
-	
+		# Orientation arrows
 		plot_orientation(tpf)
 
+		# Labels and titles
 		plt.xlim(tpf.column,tpf.column+ny)
 		plt.ylim(tpf.row,tpf.row+nx)
 		plt.xlabel('Pixel Column Number', fontsize=16)
 		plt.ylabel('Pixel Row Number', fontsize=16)
 		plt.title('TIC '+tic+' - Sector '+str(tpf.sector), fontsize=16)# + ' - Camera '+str(tpf.camera))
 	
+		# Colorbar
 		cbax = plt.subplot(gs[0,1]) # Place it where it should be.
 		pos1 = cbax.get_position() # get the original position 
 		pos2 = [pos1.x0 - 0.05, pos1.y0 ,  pos1.width, pos1.height] 
@@ -252,6 +262,31 @@ if __name__ == "__main__":
 		cb.set_label(r'Flux $\times 10^4$  (e$^-$)', labelpad=10, fontsize=16)
 	
 		plt.savefig('TPF_Gaia_TIC'+tic+'.pdf')
+		
+		# Save Gaia sources info
+		if args.SAVEGAIA:
+			dist = np.sqrt((x-x[this])**2+(y-y[this])**2)
+			GaiaID = np.array(res['Source'])
+			srt = np.argsort(dist)
+			x, y, gaiamags, dist, GaiaID = x[srt], y[srt], gaiamags[srt], dist[srt], GaiaID[srt]
+			
+			IDs = np.arange(len(x))+1
+			inside = np.zeros(len(x))
+
+			for i in range(aperture.shape[0]):
+				for j in range(aperture.shape[1]):
+					if aperture_mask[i, j]:
+						xtpf, ytpf = j+tpf.column, i+tpf.row
+						_inside = np.where((x > xtpf) & (x < xtpf+1) &
+								 		   (y > ytpf) & (y < ytpf+1))[0]
+						inside[_inside] = 1
+
+
+
+			data = Table([IDs, GaiaID, x, y, dist, dist*21., gaiamags, inside.astype('int')], 
+						names=['# ID','GaiaID','x', 'y','Dist_pix','Dist_arcsec','Gmag', 'InAper'])
+			ascii.write(data, 'Gaia_TIC'+tic+'.dat',overwrite=True)
+				
 
 
 
