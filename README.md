@@ -40,13 +40,11 @@ Several papers involving different sceince cases have already used TPF plotter. 
 - Dreizler et al., in prep
 
 ## Credits
-If you use tpfplotter, you have two options to give credit to it:
+If you use tpfplotter, please give credit to the following paper:
 
-- If I (J. Lillo-Box) am co-author of your paper, you can use the following sentence to the acknowledgments section:
- > This work made use of \texttt{tpfplotter}, which also made use of the python packages \texttt{astropy}, \texttt{lightkurve}, \texttt{matplotlib} and \texttt{numpy}.
+Aller, A., Lillo-Box, J., Jones, D., et al. (2019) "Planetary nebulae seen with TESS: Discovery of new binary central star candidates from Cycle 1," arXiv, arXiv:1911.09991 - 2019arXiv191109991A 
 
-
-- If I am not co-author of your work that is fine but please add the following entence to the acknowledgments section and drop me an email to let me know it was useful to your work:
+and add the following sentence somewhere in the paper (either footnote of acknowñedgements section):
  > This work made use of \texttt{tpfplotter} by J. Lillo-Box (publicly available in www.github.com/jlillo/tpfplotter), which also made use of the python packages \texttt{astropy}, \texttt{lightkurve}, \texttt{matplotlib} and \texttt{numpy}.
 
 
