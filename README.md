@@ -15,6 +15,8 @@ If you know the TIC number ():
 python tpfplotter.py 150428135 --maglim 6
 ```
 
+![alt text](https://github.com/jlillo/tpfplotter/blob/master/TPF_Gaia_TIC150428135.jpg)
+
 Note: if the TIC is in the CTL, the mask will correspond to the pipeline mask. Otherwise, it will just show a mask obtained with tpf.create_threshold_mask(threshold=10,reference_pixel='center'): 
 
 If there is no TIC number, you can search by coordinates:
@@ -28,8 +30,6 @@ Also, if you have a list of TIC values just type:
 ```
 python tpfplotter.py list_of_tics.lis --LIST --maglim 6
 ```
-
-![alt text](https://github.com/jlillo/tpfplotter/blob/master/TPF_Gaia_TIC150428135.jpg)
 
 In case ***tpfplotter*** is not able to find the target in the Gaia catalog, you can overcome this by providing the Gaia ID and Gmag as input in the following way:
 
