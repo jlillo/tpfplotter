@@ -1,8 +1,11 @@
 import os
 import sys
+import os
+import sys
 import time
 
 from lightkurve import search_targetpixelfile
+from lightkurve import search_tesscut
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
@@ -38,6 +41,7 @@ def cli():
     parser.add_argument("tic", help="TIC number")
     parser.add_argument("-L", "--LIST", help="Only fit the LC", action="store_true")
     parser.add_argument("-S", "--SAVEGAIA", help="Save Gaia sources", action="store_true")
+    parser.add_argument("-C", "--COORD", help="Use coordinates", default=False)
     parser.add_argument("--maglim", default=5., help="Maximum magnitude contrast respect to TIC")
     parser.add_argument("--sector", default=None, help="Select Sector if more than one")
     parser.add_argument("--gid", default=None, help="Gaia ID")
@@ -171,25 +175,76 @@ def get_coord(tic):
 if __name__ == "__main__":
 	args = cli()
 	if args.LIST:
-		_tics = np.genfromtxt(args.tic,dtype=None)
-		tics = []
-		for t in _tics: tics.append(str(t))
+		if args.COORD is not False:
+			_tics = np.genfromtxt(args.tic,dtype=None)
+			tics, ras, decs = [], [], []
+			for t in _tics: 
+				tics.append(str(t[0]))		
+				ras.append(str(t[1]))		
+				decs.append(str(t[2]))	
+			ras, decs = np.array(ras), np.array(decs)						
+		else:
+			_tics = np.genfromtxt(args.tic,dtype=None)
+			tics = []
+			for t in _tics: tics.append(str(t))
 	else:
-		tics = np.array([args.tic])
+		if args.COORD:
+			coords = args.COORD
+			ras, decs = np.array([coords.split(',')[0]]), np.array([coords.split(',')[1]])
+			tics = np.array([args.tic])
+		else:
+			tics = np.array([args.tic])
+				
 
-	for tic in tics:
-		print tic+'...'
-		ra,dec = get_coord(tic)
+	for tt,tic in enumerate(tics):
+		
+		if args.COORD  is not False:
+			ra,dec = ras[tt], decs[tt]	
+			print 'Working on '+tic+' (ra = '+ra+', '+'dec = '+dec+') ...'
+		else:
+			ra,dec = get_coord(tic)
+			print 'Working on TIC'+tic+' (ra = '+str(ra)+', '+'dec = '+str(dec)+') ...'
 	
 		if args.gid != None:
 			gaia_id, mag = args.gid, np.float(args.gmag)
 		else:
 			gaia_id, mag = get_gaia_data(ra, dec)
 	
-		if args.sector != None:
-			tpf = search_targetpixelfile("TIC "+tic, sector=int(args.sector), mission='TESS').download()
+
+		# By coordinates -----------------------------------------------------------------
+		if args.COORD  is not False:
+			                                                                             #
+			if args.sector != None:
+				tpf = search_tesscut(ra+" "+dec, sector=int(args.sector)).download(cutout_size=(12,12))     #
+
+			else:
+				tpf = search_tesscut(ra+" "+dec).download(cutout_size=(12,12))                             #
+			pipeline = "False" 
+			print '    --> Using TESScut to get the TPF'
+			
+		# By TIC name --------------------------------------------------------------------
 		else:
-			tpf = search_targetpixelfile("TIC "+tic, mission='TESS').download()
+			# If the target is in the CTL (short-cadance targets)...
+			try:
+				if args.sector != None:
+					tpf = search_targetpixelfile("TIC "+tic, sector=int(args.sector), mission='TESS').download()
+					a = tpf.flux        # To check it has the flux array 
+					pipeline = "True"  
+				else:
+					tpf = search_targetpixelfile("TIC "+tic, mission='TESS').download()
+					a = tpf.flux        # To check it has the flux array 
+					pipeline = "True"   
+				
+				print "    --> Target found in the CTL!"                
+		
+			# ... otherwise if it still has a TIC number:
+			except:
+				if args.sector != None:
+					tpf = search_tesscut("TIC "+tic, sector=int(args.sector)).download(cutout_size=(12,12))   
+				else:
+					tpf = search_tesscut("TIC "+tic).download(cutout_size=(12,12))                            
+				print "    -->  Target not in CTL. The FFI cut out was succesfully downloaded"       
+				pipeline = "False"                                                                               		
 		
 		fig = plt.figure(figsize=(6.93, 5.5))
 		gs = gridspec.GridSpec(1,3, height_ratios=[1], width_ratios=[1,0.05,0.01])
@@ -200,20 +255,30 @@ if __name__ == "__main__":
 		mean_tpf = np.mean(tpf.flux,axis=0)
 		nx,ny = np.shape(mean_tpf)
 		norm = ImageNormalize(stretch=stretching.LogStretch())
-		splot = plt.imshow(np.mean(tpf.flux,axis=0)/1.e4,norm=norm, \
+		division = np.int(np.log10(np.nanmax(tpf.flux)))
+		splot = plt.imshow(np.mean(tpf.flux,axis=0)/10**division,norm=norm, \
 						extent=[tpf.column,tpf.column+ny,tpf.row,tpf.row+nx],origin='bottom', zorder=0)
-		
+
 		# Pipeline aperture
-		aperture_mask = tpf.pipeline_mask
-		aperture = tpf._parse_aperture_mask(aperture_mask)
+		if pipeline == "True":                                           #
+			aperture_mask = tpf.pipeline_mask
+			aperture = tpf._parse_aperture_mask(aperture_mask)
+			maskcolor = 'tomato'
+			print "    --> Using pipeline aperture..."
+		else:
+			aperture_mask = tpf.create_threshold_mask(threshold=10,reference_pixel='center')                 
+			aperture = tpf._parse_aperture_mask(aperture_mask)
+			maskcolor = 'lightgray'
+			print "    --> Using threshold aperture..."
+
 	
 		for i in range(aperture.shape[0]):
 			for j in range(aperture.shape[1]):
 				if aperture_mask[i, j]:
 					ax1.add_patch(patches.Rectangle((j+tpf.column, i+tpf.row),
-												   1, 1, color='tomato', fill=True,alpha=0.4))    
+												   1, 1, color=maskcolor, fill=True,alpha=0.4))    
 					ax1.add_patch(patches.Rectangle((j+tpf.column, i+tpf.row),
-												   1, 1, color='tomato', fill=False,alpha=1,lw=2))    
+												   1, 1, color=maskcolor, fill=False,alpha=1,lw=2))    
 		
 		# Gaia sources
 		r, res = add_gaia_figure_elements(tpf,magnitude_limit=mag+np.float(args.maglim),targ_mag=mag)    
@@ -249,7 +314,10 @@ if __name__ == "__main__":
 		plt.ylim(tpf.row,tpf.row+nx)
 		plt.xlabel('Pixel Column Number', fontsize=16)
 		plt.ylabel('Pixel Row Number', fontsize=16)
-		plt.title('TIC '+tic+' - Sector '+str(tpf.sector), fontsize=16)# + ' - Camera '+str(tpf.camera))
+		if args.COORD is not False:                                                                                          #
+			plt.title('Coordinates '+tic+' - Sector '+str(tpf.sector), fontsize=16)# + ' - Camera '+str(tpf.camera))  #
+		else:   												#
+			plt.title('TIC '+tic+' - Sector '+str(tpf.sector), fontsize=16)# + ' - Camera '+str(tpf.camera))    
 	
 		# Colorbar
 		cbax = plt.subplot(gs[0,1]) # Place it where it should be.

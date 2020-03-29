@@ -1,5 +1,5 @@
 # tpfplotter
- Create paper-ready figures (1-column) overplotting the Gaia DR2 catalog to the TESS Target Pixel Files (TPF).
+ Create paper-ready figures (1-column) overplotting the Gaia DR2 catalog to the TESS Target Pixel Files (TPF). You can create plots for any target observed by TESS! Even if you do not have a TIC number, you can search by coordinates now (see examples below)!
 
 ## Installation & Requirenments
  Clone this folder or download it to your computer. That's it!
@@ -7,13 +7,23 @@
 ***tpfplotter*** is written in Python2.7 (sorry!), but it will be updated to Python3 as soon as I have some time...
 
 ## Usage
-Using tpfplotter is really easy, you just need to know the TIC number:
+Using tpfplotter is really easy to use.
+
+If you know the TIC number ():
 
 ```
 python tpfplotter.py 150428135 --maglim 6
 ```
 
-Alternatively if you have a list of TIC values just type:
+Note: if the TIC is in the CTL, the mask will correspond to the pipeline mask. Otherwise, it will just show a mask obtained with tpf.create_threshold_mask(threshold=10,reference_pixel='center'): 
+
+If there is no TIC number, you can search by coordinates:
+
+```
+python tpfplotter.py TestTarget1 --COORD 166.0189667,49.15338516 --maglim 6
+```
+
+Also, if you have a list of TIC values just type:
 
 ```
 python tpfplotter.py list_of_tics.lis --LIST --maglim 6
@@ -46,6 +56,10 @@ Aller, A., Lillo-Box, J., Jones, D., et al. (2019) "Planetary nebulae seen with 
 
 and add the following sentence somewhere in the paper (either footnote of acknowledgements section):
  > This work made use of \texttt{tpfplotter} by J. Lillo-Box (publicly available in www.github.com/jlillo/tpfplotter), which also made use of the python packages \texttt{astropy}, \texttt{lightkurve}, \texttt{matplotlib} and \texttt{numpy}.
+
+## Contributors
+
+J. Lillo-Box, A. Aller, A. Castro
 
 
 
