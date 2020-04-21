@@ -52,14 +52,14 @@ Several papers involving different sceince cases have already used TPF plotter. 
 ## Credits
 If you use tpfplotter, please give credit to the following paper:
 
-Aller, A., Lillo-Box, J., Jones, D., et al. (2019) "Planetary nebulae seen with TESS: Discovery of new binary central star candidates from Cycle 1," arXiv, arXiv:1911.09991 - 2019arXiv191109991A [ADS link](https://ui.adsabs.harvard.edu/abs/2019arXiv191109991A/abstract)
+Aller, A., Lillo-Box, J., Jones, D., et al. (2020, A&A, 635, 128) "Planetary nebulae seen with TESS: Discovery of new binary central star candidates from Cycle 1,"  [ADS link](https://ui.adsabs.harvard.edu/abs/2020A%26A...635A.128A/abstract)
 
 and add the following sentence somewhere in the paper (either footnote of acknowledgements section):
  > This work made use of \texttt{tpfplotter} by J. Lillo-Box (publicly available in www.github.com/jlillo/tpfplotter), which also made use of the python packages \texttt{astropy}, \texttt{lightkurve}, \texttt{matplotlib} and \texttt{numpy}.
 
 ## Contributors
 
-J. Lillo-Box, A. Aller, A. Castro
+J. Lillo-Box, A. Aller, A. Castro (TESScut addition), D. Jones (python3 version)
 
 
 
