@@ -155,7 +155,6 @@ def get_gaia_data(ra, dec):
         return result[idx]['Source'], result[idx]['Gmag']
     else:
         return result[0]['Source'], result[0]['Gmag']
-
  	
 def get_coord(tic):
 	"""
