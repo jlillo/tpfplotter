@@ -148,8 +148,14 @@ def get_gaia_data(ra, dec):
         raise no_targets_found_message
     elif len(result) == 0:
         raise too_few_found_message
-    
-    return result[0]['Source'], result[0]['Gmag']
+
+    if len(result)>1:
+        dist = np.sqrt((result['RA_ICRS']-ra)**2 + (result['DE_ICRS']-dec)**2)
+        idx = np.where(dist == np.min(dist))[0][0]
+        return result[idx]['Source'], result[idx]['Gmag']
+    else:
+        return result[0]['Source'], result[0]['Gmag']
+
  	
 def get_coord(tic):
 	"""
