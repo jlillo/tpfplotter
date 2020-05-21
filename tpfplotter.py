@@ -99,7 +99,7 @@ def plot_orientation(tpf):
 	
 	"""
 	mean_tpf = np.mean(tpf.flux,axis=0)
-	nx,ny = np.shape(mean_tpf)
+	ny,nx = np.shape(mean_tpf)
 	x0,y0 = tpf.column+int(0.9*nx),tpf.row+int(0.2*nx)
 	# East
 	tmp =  tpf.get_coordinates()
@@ -309,7 +309,7 @@ if __name__ == "__main__":
 		dsort = np.argsort(dist)
 		for d,elem in enumerate(dsort):
 			if dist[elem] < 6:
-				plt.text(x[elem]+0.1,y[elem]+0.1,str(d+1),color='white', zorder=100)
+				plt.text(x[elem]-0.1,y[elem]+0.1,str(d+1),color='white', zorder=100)
 	
 		# Orientation arrows
 		plot_orientation(tpf)
@@ -332,9 +332,10 @@ if __name__ == "__main__":
 	
 		cb = Colorbar(ax = cbax, mappable = splot, orientation = 'vertical', ticklocation = 'right')
 		plt.xticks(fontsize=14)
-		cb.set_label(r'Flux $\times 10^4$  (e$^-$)', labelpad=10, fontsize=16)
+		exponent = r'$\times 10^'+str(division)+'$'
+		cb.set_label(r'Flux '+exponent+r' (e$^-$)', labelpad=10, fontsize=16)
 	
-		plt.savefig('TPF_Gaia_TIC'+tic+'.pdf')
+		plt.savefig('TPF_Gaia_TIC'+tic+'_S'+str(tpf.sector)+'.pdf')
 		
 		# Save Gaia sources info
 		if args.SAVEGAIA:
@@ -358,7 +359,7 @@ if __name__ == "__main__":
 
 			data = Table([IDs, GaiaID, x, y, dist, dist*21., gaiamags, inside.astype('int')], 
 						names=['# ID','GaiaID','x', 'y','Dist_pix','Dist_arcsec','Gmag', 'InAper'])
-			ascii.write(data, 'Gaia_TIC'+tic+'.dat',overwrite=True)
+			ascii.write(data, 'Gaia_TIC'+tic+'_S'+str(tpf.sector)+'.dat',overwrite=True)
 				
 
 
