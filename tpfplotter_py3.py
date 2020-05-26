@@ -155,6 +155,29 @@ def get_gaia_data(ra, dec):
     else:
         return result[0]['Source'], result[0]['Gmag']
 
+def get_gaia_data_from_tic(tic):
+    '''
+    Get Gaia parameters
+
+    Returns
+    -----------------------
+    GaiaID, Gaia_mag
+    '''
+    # Get the Gaia sources
+    result = Catalogs.query_object('TIC'+tic, radius=.005, catalog="TIC")
+    IDs = result['ID'].data.data
+    k = np.where(IDs == tic)[0][0]
+    GAIAs = result['GAIA'].data.data
+    Gaiamags = result['GAIAmag'].data.data
+
+    GAIA_k = GAIAs[k]
+    Gaiamag_k = Gaiamags[k]
+
+    if GAIA_k == '':
+        GAIA_k = np.nan
+    return GAIA_k, Gaiamag_k
+
+
 def get_coord(tic):
 	"""
 	Get TIC corrdinates
@@ -212,7 +235,9 @@ if __name__ == "__main__":
         if args.gid != None:
         	gaia_id, mag = args.gid, np.float(args.gmag)
         else:
-        	gaia_id, mag = get_gaia_data(ra, dec)
+        	#gaia_id, mag = get_gaia_data(ra, dec)
+            gaia_id, mag = get_gaia_data_from_tic(tic)
+
 
 
         # By coordinates -----------------------------------------------------------------
