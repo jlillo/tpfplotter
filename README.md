@@ -59,7 +59,7 @@ and add the following sentence somewhere in the paper (either footnote of acknow
 
 ## Contributors
 
-J. Lillo-Box, A. Aller, A. Castro (TESScut addition), D. Jones (python3 version)
+J. Lillo-Box, A. Aller, A. Castro (TESScut addition), D. Jones (python3 version), P. Bluhm (Giai identification), N. Espinoza (Gaia RA-DEC cross-matching).
 
 
 
