@@ -284,7 +284,7 @@ if __name__ == "__main__":
         mean_tpf = np.mean(tpf.flux,axis=0)
         nx,ny = np.shape(mean_tpf)
         norm = ImageNormalize(stretch=stretching.LogStretch())
-        division = np.int(np.log10(np.nanmax(tpf.flux)))
+        division = np.int(np.log10(np.nanmax(np.nanmean(tpf.flux,axis=0))))
         splot = plt.imshow(np.nanmean(tpf.flux,axis=0)/10**division,norm=norm, \
         				extent=[tpf.column,tpf.column+ny,tpf.row,tpf.row+nx],origin='bottom', zorder=0)
 
