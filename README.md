@@ -1,7 +1,8 @@
-![alt text](https://github.com/jlillo/tpfplotter/blob/master/logo_tpfplotter.png)
-
 # tpfplotter
  Create paper-ready figures (1-column) overplotting the Gaia DR2 catalog to the TESS Target Pixel Files (TPF). You can create plots for any target observed by TESS! Even if you do not have a TIC number, you can search by coordinates now (see examples below)!
+
+![alt text](https://github.com/jlillo/tpfplotter/blob/master/logo_tpfplotter.png)
+
 
 ## Installation & Requirenments
  Clone this folder or download it to your computer. That's it!
