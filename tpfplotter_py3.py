@@ -72,13 +72,13 @@ def add_gaia_figure_elements(tpf, magnitude_limit=18,targ_mag=10.):
     result = result[result.Gmag < magnitude_limit]
     if len(result) == 0:
         raise no_targets_found_message
-    radecs = np.vstack([result['RA_ICRS'], result['DE_ICRS']]).T
-    coords = tpf.wcs.all_world2pix(radecs, 0.5) ## TODO, is origin supposed to be zero or one?
     year = ((tpf.astropy_time[0].jd - 2457206.375) * u.day).to(u.year)
-    pmra = ((np.nan_to_num(np.asarray(result.pmRA)) * u.milliarcsecond/u.year) * year).to(u.arcsec).value
-    pmdec = ((np.nan_to_num(np.asarray(result.pmDE)) * u.milliarcsecond/u.year) * year).to(u.arcsec).value
+    pmra = ((np.nan_to_num(np.asarray(result.pmRA)) * u.milliarcsecond/u.year) * year).to(u.degree).value
+    pmdec = ((np.nan_to_num(np.asarray(result.pmDE)) * u.milliarcsecond/u.year) * year).to(u.degree).value
     result.RA_ICRS += pmra
     result.DE_ICRS += pmdec
+    radecs = np.vstack([result['RA_ICRS'], result['DE_ICRS']]).T
+    coords = tpf.wcs.all_world2pix(radecs, 0.5) ## TODO, is origin supposed to be zero or one?
 
     # Gently size the points by their Gaia magnitude
     sizes = 128.0 / 2**(result['Gmag']/targ_mag)#64.0 / 2**(result['Gmag']/5.0)
