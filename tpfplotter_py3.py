@@ -352,12 +352,12 @@ if __name__ == "__main__":
         # Reverse x limits so that image plots as seen on the sky:
         plt.xlim(tpf.column+ny,tpf.column)
         plt.ylim(tpf.row,tpf.row+nx)
-        plt.xlabel('Pixel Column Number', fontsize=16)
-        plt.ylabel('Pixel Row Number', fontsize=16)
+        plt.xlabel('Pixel Column Number', fontsize=16, zorder=200)
+        plt.ylabel('Pixel Row Number', fontsize=16, zorder=200)
         if args.COORD is not False:                                                                                          #
-        	plt.title('Coordinates '+tic+' - Sector '+str(tpf.sector), fontsize=16)# + ' - Camera '+str(tpf.camera))  #
+        	plt.title('Coordinates '+tic+' - Sector '+str(tpf.sector), fontsize=16, zorder=200)# + ' - Camera '+str(tpf.camera))  #
         else:   												#
-        	plt.title('TIC '+tic+' - Sector '+str(tpf.sector), fontsize=16)# + ' - Camera '+str(tpf.camera))
+        	plt.title('TIC '+tic+' - Sector '+str(tpf.sector), fontsize=16, zorder=200)# + ' - Camera '+str(tpf.camera))
 
         # Colorbar
         cbax = plt.subplot(gs[0,1]) # Place it where it should be.
