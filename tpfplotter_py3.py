@@ -105,7 +105,7 @@ def plot_orientation(tpf):
 	tmp =  tpf.get_coordinates()
 	ra00, dec00 = tmp[0][0][0][0], tmp[1][0][0][0]
 	ra10,dec10 = tmp[0][0][0][-1], tmp[1][0][0][-1]
-    # Each degree of RA is not a full degree on the sky if not;
+    # Each degree of RA is not a full degree on the sky if not
     # at equator; need cos(dec) factor to compensate
 	cosdec = np.cos(np.deg2rad(0.5*(dec10+dec00)))
     # Reverse the order of RA arguments here relative to dec
