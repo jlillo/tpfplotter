@@ -99,7 +99,7 @@ def plot_orientation(tpf):
 	"""
 	mean_tpf = np.mean(tpf.flux,axis=0)
 	nx,ny = np.shape(mean_tpf)
-	x0,y0 = tpf.column+int(0.9*nx),tpf.row+int(0.2*nx)
+	x0,y0 = tpf.column+int(0.2*nx),tpf.row+int(0.2*ny)
 	# East
 	tmp =  tpf.get_coordinates()
 	ra00, dec00 = tmp[0][0][0][0], tmp[1][0][0][0]
@@ -349,7 +349,8 @@ if __name__ == "__main__":
         plot_orientation(tpf)
 
         # Labels and titles
-        plt.xlim(tpf.column,tpf.column+ny)
+        # Reverse x limits so that image plots as seen on the sky:
+        plt.xlim(tpf.column+ny,tpf.column)
         plt.ylim(tpf.row,tpf.row+nx)
         plt.xlabel('Pixel Column Number', fontsize=16)
         plt.ylabel('Pixel Row Number', fontsize=16)
