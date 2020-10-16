@@ -45,6 +45,7 @@ def cli():
     parser.add_argument("--sector", default=None, help="Select Sector if more than one")
     parser.add_argument("--gid", default=None, help="Gaia ID")
     parser.add_argument("--gmag", default=None, help="Gaia mag")
+    parser.add_argument("--legend", default='best', help="Legend location")
     args = parser.parse_args()
     return args
 
@@ -340,7 +341,7 @@ if __name__ == "__main__":
             size = 128.0 / 2**((f-mag))
             plt.scatter(0,0,s=size,c='red',alpha=0.6, edgecolor=None,zorder = 10,label = r'$\Delta m=$ '+str(np.int(f-mag)))
 
-        ax1.legend(fancybox=True, framealpha=0.7)
+        ax1.legend(fancybox=True, framealpha=0.7, loc=args.legend)
 
         # Source labels
         dist = np.sqrt((x-x[this])**2+(y-y[this])**2)
