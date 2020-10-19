@@ -45,6 +45,7 @@ def cli():
     parser.add_argument("--sector", default=None, help="Select Sector if more than one")
     parser.add_argument("--gid", default=None, help="Gaia ID")
     parser.add_argument("--gmag", default=None, help="Gaia mag")
+    parser.add_argument("--legend", default='best', help="Legend location")
     args = parser.parse_args()
     return args
 
@@ -72,13 +73,13 @@ def add_gaia_figure_elements(tpf, magnitude_limit=18,targ_mag=10.):
     result = result[result.Gmag < magnitude_limit]
     if len(result) == 0:
         raise no_targets_found_message
-    radecs = np.vstack([result['RA_ICRS'], result['DE_ICRS']]).T
-    coords = tpf.wcs.all_world2pix(radecs, 0.5) ## TODO, is origin supposed to be zero or one?
     year = ((tpf.astropy_time[0].jd - 2457206.375) * u.day).to(u.year)
-    pmra = ((np.nan_to_num(np.asarray(result.pmRA)) * u.milliarcsecond/u.year) * year).to(u.arcsec).value
-    pmdec = ((np.nan_to_num(np.asarray(result.pmDE)) * u.milliarcsecond/u.year) * year).to(u.arcsec).value
+    pmra = ((np.nan_to_num(np.asarray(result.pmRA)) * u.milliarcsecond/u.year) * year).to(u.degree).value
+    pmdec = ((np.nan_to_num(np.asarray(result.pmDE)) * u.milliarcsecond/u.year) * year).to(u.degree).value
     result.RA_ICRS += pmra
     result.DE_ICRS += pmdec
+    radecs = np.vstack([result['RA_ICRS'], result['DE_ICRS']]).T
+    coords = tpf.wcs.all_world2pix(radecs, 0.5) ## TODO, is origin supposed to be zero or one?
 
     # Gently size the points by their Gaia magnitude
     sizes = 128.0 / 2**(result['Gmag']/targ_mag)#64.0 / 2**(result['Gmag']/5.0)
@@ -99,22 +100,31 @@ def plot_orientation(tpf):
 	"""
 	mean_tpf = np.mean(tpf.flux,axis=0)
 	nx,ny = np.shape(mean_tpf)
-	x0,y0 = tpf.column+int(0.9*nx),tpf.row+int(0.2*nx)
+	x0,y0 = tpf.column+int(0.2*nx),tpf.row+int(0.2*ny)
 	# East
 	tmp =  tpf.get_coordinates()
 	ra00, dec00 = tmp[0][0][0][0], tmp[1][0][0][0]
 	ra10,dec10 = tmp[0][0][0][-1], tmp[1][0][0][-1]
-	theta = np.arctan((dec10-dec00)/(ra10-ra00))
+    # Each degree of RA is not a full degree on the sky if not
+    # at equator; need cos(dec) factor to compensate
+	cosdec = np.cos(np.deg2rad(0.5*(dec10+dec00)))
+    # Reverse the order of RA arguments here relative to dec
+    # args to account for handedness of RA/Dec vs. x/y coords: 
+	theta = np.arctan((dec10-dec00)/(cosdec*(ra00-ra10)))
 	if (ra10-ra00) < 0.0: theta += np.pi
 	#theta = -22.*np.pi/180.
+    # If angle is small, arrows can be a bit closer to corner:
+	if (abs(np.rad2deg(theta)) < 30):
+		x0 -= 0.08*nx
+		y0 -= 0.08*ny
 	x1, y1 = 1.*np.cos(theta), 1.*np.sin(theta)
 	plt.arrow(x0,y0,x1,y1,head_width=0.2,color='white')
-	plt.text(x0+1.5*x1,y0+1.5*y1,'E',color='white')
+	plt.text(x0+1.6*x1,y0+1.6*y1,'E',color='white',ha='center',va='center')
 	# North
 	theta = theta +90.*np.pi/180.
 	x1, y1 = 1.*np.cos(theta), 1.*np.sin(theta)
 	plt.arrow(x0,y0,x1,y1,head_width=0.2,color='white')
-	plt.text(x0+1.5*x1,y0+1.5*y1,'N',color='white')
+	plt.text(x0+1.6*x1,y0+1.6*y1,'N',color='white',ha='center',va='center')
 
 
 
@@ -331,7 +341,7 @@ if __name__ == "__main__":
             size = 128.0 / 2**((f-mag))
             plt.scatter(0,0,s=size,c='red',alpha=0.6, edgecolor=None,zorder = 10,label = r'$\Delta m=$ '+str(np.int(f-mag)))
 
-        ax1.legend(fancybox=True, framealpha=0.7)
+        ax1.legend(fancybox=True, framealpha=0.7, loc=args.legend)
 
         # Source labels
         dist = np.sqrt((x-x[this])**2+(y-y[this])**2)
@@ -344,14 +354,15 @@ if __name__ == "__main__":
         plot_orientation(tpf)
 
         # Labels and titles
-        plt.xlim(tpf.column,tpf.column+ny)
+        # Reverse x limits so that image plots as seen on the sky:
+        plt.xlim(tpf.column+ny,tpf.column)
         plt.ylim(tpf.row,tpf.row+nx)
-        plt.xlabel('Pixel Column Number', fontsize=16)
-        plt.ylabel('Pixel Row Number', fontsize=16)
+        plt.xlabel('Pixel Column Number', fontsize=16, zorder=200)
+        plt.ylabel('Pixel Row Number', fontsize=16, zorder=200)
         if args.COORD is not False:                                                                                          #
-        	plt.title('Coordinates '+tic+' - Sector '+str(tpf.sector), fontsize=16)# + ' - Camera '+str(tpf.camera))  #
+        	plt.title('Coordinates '+tic+' - Sector '+str(tpf.sector), fontsize=16, zorder=200)# + ' - Camera '+str(tpf.camera))  #
         else:   												#
-        	plt.title('TIC '+tic+' - Sector '+str(tpf.sector), fontsize=16)# + ' - Camera '+str(tpf.camera))
+        	plt.title('TIC '+tic+' - Sector '+str(tpf.sector), fontsize=16, zorder=200)# + ' - Camera '+str(tpf.camera))
 
         # Colorbar
         cbax = plt.subplot(gs[0,1]) # Place it where it should be.
