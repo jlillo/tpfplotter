@@ -51,9 +51,9 @@ Several papers involving different science cases have already used TPF plotter. 
 
 - Aller, A., Lillo-Box, J., Jones, D., et al., 2019, arXiv e-prints, arXiv:1911.09991  [ADS link](https://ui.adsabs.harvard.edu/abs/2020A%26A...635A.128A/abstract)
 - Lillo-Box, et al., (2020), arXiv e-prints, arXiv:2010.06928. [ADS link](https://ui.adsabs.harvard.edu/abs/2020arXiv201006928L)
-- Demory, et al., (2020), \aap, 642, A49. [ADS link](https://ui.adsabs.harvard.edu/abs/2020A&A...642A..49D)
+- Demory, et al., (2020), A&A, 642, A49. [ADS link](https://ui.adsabs.harvard.edu/abs/2020A&A...642A..49D)
 - Luque, et al., (2020), arXiv e-prints, arXiv:2009.08338. [ADS link](https://ui.adsabs.harvard.edu/abs/2020arXiv200908338L)
-- Bluhm, et al., (2020), \aap, 639, A132. [ADS link](https://ui.adsabs.harvard.edu/abs/2020A&A...639A.132B)
+- Bluhm, et al., (2020), A&A, 639, A132. [ADS link](https://ui.adsabs.harvard.edu/abs/2020A&A...639A.132B)
 - Nowak, et al., (2020), arXiv e-prints, arXiv:2003.01140. [ADS link](https://ui.adsabs.harvard.edu/abs/2020arXiv200301140N)
 
 
