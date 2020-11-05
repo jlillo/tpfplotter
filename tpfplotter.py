@@ -247,8 +247,11 @@ if __name__ == "__main__":
         if args.gid != None:
         	gaia_id, mag = args.gid, np.float(args.gmag)
         else:
-        	#gaia_id, mag = get_gaia_data(ra, dec)
-            gaia_id, mag = get_gaia_data_from_tic(tic)
+            if args.COORD  is not False:
+        	       gaia_id, mag = get_gaia_data(ra, dec)
+            else:
+                gaia_id, mag = get_gaia_data_from_tic(tic)
+            #gaia_id, mag = get_gaia_data_from_tic(tic)
 
 
 
