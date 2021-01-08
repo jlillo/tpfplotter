@@ -43,6 +43,7 @@ def cli():
     parser.add_argument("-L", "--LIST", help="Only fit the LC", action="store_true")
     parser.add_argument("-S", "--SAVEGAIA", help="Save Gaia sources", action="store_true")
     parser.add_argument("-C", "--COORD", help="Use coordinates", default=False)
+    parser.add_argument("-n", "--name", help="Target name to be plotted in title", default=False)
     parser.add_argument("--maglim", default=5., help="Maximum magnitude contrast respect to TIC")
     parser.add_argument("--sector", default=None, help="Select Sector if more than one")
     parser.add_argument("--gid", default=None, help="Gaia ID")
@@ -300,6 +301,8 @@ if __name__ == "__main__":
         nx,ny = np.shape(mean_tpf)
         norm = ImageNormalize(stretch=stretching.LogStretch())
         division = np.int(np.log10(np.nanmax(np.nanmean(tpf.flux,axis=0))))
+        print(np.min(np.nanmean(tpf.flux,axis=0)))
+        print(np.min(tpf.quality))
         splot = plt.imshow(np.nanmean(tpf.flux,axis=0)/10**division,norm=norm, \
         				extent=[tpf.column,tpf.column+ny,tpf.row,tpf.row+nx],origin='bottom', zorder=0)
 
@@ -366,6 +369,8 @@ if __name__ == "__main__":
         plt.ylabel('Pixel Row Number', fontsize=16, zorder=200)
         if args.COORD is not False:                                                                                          #
         	plt.title('Coordinates '+tic+' - Sector '+str(tpf.sector), fontsize=16, zorder=200)# + ' - Camera '+str(tpf.camera))  #
+        elif args.name is not False:
+            plt.title(args.name +' - Sector '+str(tpf.sector), fontsize=16, zorder=200)
         else:   												#
         	plt.title('TIC '+tic+' - Sector '+str(tpf.sector), fontsize=16, zorder=200)# + ' - Camera '+str(tpf.camera))
 
