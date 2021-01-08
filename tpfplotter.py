@@ -252,8 +252,8 @@ if __name__ == "__main__":
         	       gaia_id, mag = get_gaia_data(ra, dec)
             else:
                 gaia_id, mag = get_gaia_data_from_tic(tic)
-            #gaia_id, mag = get_gaia_data_from_tic(tic)
-
+                if np.isnan(mag):
+                    gaia_id, mag = get_gaia_data(ra, dec)
 
 
         # By coordinates -----------------------------------------------------------------
@@ -301,8 +301,6 @@ if __name__ == "__main__":
         nx,ny = np.shape(mean_tpf)
         norm = ImageNormalize(stretch=stretching.LogStretch())
         division = np.int(np.log10(np.nanmax(np.nanmean(tpf.flux,axis=0))))
-        print(np.min(np.nanmean(tpf.flux,axis=0)))
-        print(np.min(tpf.quality))
         splot = plt.imshow(np.nanmean(tpf.flux,axis=0)/10**division,norm=norm, \
         				extent=[tpf.column,tpf.column+ny,tpf.row,tpf.row+nx],origin='bottom', zorder=0)
 
