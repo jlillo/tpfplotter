@@ -76,7 +76,7 @@ def add_gaia_figure_elements(tpf, magnitude_limit=18,targ_mag=10.):
     result = result[result.Gmag < magnitude_limit]
     if len(result) == 0:
         raise no_targets_found_message
-    year = ((tpf.astropy_time[0].jd - 2457206.375) * u.day).to(u.year)
+    year = ((tpf.time[0].jd - 2457206.375) * u.day).to(u.year)
     pmra = ((np.nan_to_num(np.asarray(result.pmRA)) * u.milliarcsecond/u.year) * year).to(u.degree).value
     pmdec = ((np.nan_to_num(np.asarray(result.pmDE)) * u.milliarcsecond/u.year) * year).to(u.degree).value
     result.RA_ICRS += pmra
@@ -300,9 +300,10 @@ if __name__ == "__main__":
         mean_tpf = np.mean(tpf.flux,axis=0)
         nx,ny = np.shape(mean_tpf)
         norm = ImageNormalize(stretch=stretching.LogStretch())
-        division = np.int(np.log10(np.nanmax(np.nanmean(tpf.flux,axis=0))))
-        splot = plt.imshow(np.nanmean(tpf.flux,axis=0)/10**division,norm=norm, \
-        				extent=[tpf.column,tpf.column+ny,tpf.row,tpf.row+nx],origin='bottom', zorder=0)
+        division = np.int(np.log10(np.nanmax(np.nanmean(tpf.flux.value,axis=0))))
+        image = np.nanmean(tpf.flux,axis=0)/10**division
+        splot = plt.imshow(image,norm=norm, \
+        				extent=[tpf.column,tpf.column+ny,tpf.row,tpf.row+nx],origin='lower', zorder=0)
 
         # Pipeline aperture
         if pipeline == "True":                                           #
@@ -378,8 +379,12 @@ if __name__ == "__main__":
         pos2 = [pos1.x0 - 0.05, pos1.y0 ,  pos1.width, pos1.height]
         cbax.set_position(pos2) # set a new position
 
-        cb = Colorbar(ax = cbax, mappable = splot, orientation = 'vertical', ticklocation = 'right')
+        cbar_ticks = np.linspace(np.min(image), np.max(image), 8, endpoint=True)
+
+        cb = Colorbar(ax = cbax, mappable = splot, orientation = 'vertical',
+                      ticklocation = 'right')
         plt.xticks(fontsize=14)
+        #cbax.set_yticklabels(["{:4.2f}".format(i) for i in cbar_ticks])
         exponent = r'$\times 10^'+str(division)+'$'
         cb.set_label(r'Flux '+exponent+r' (e$^-$)', labelpad=10, fontsize=16)
 
