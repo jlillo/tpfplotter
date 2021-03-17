@@ -246,7 +246,7 @@ if __name__ == "__main__":
         	print('Working on TIC'+tic+' (ra = '+str(ra)+', '+'dec = '+str(dec)+') ...')
 
         if args.gid != None:
-        	gaia_id, mag = args.gid, np.float(args.gmag)
+        	gaia_id, mag = args.gid, float(args.gmag)
         else:
             if args.COORD  is not False:
         	       gaia_id, mag = get_gaia_data(ra, dec)
@@ -300,7 +300,7 @@ if __name__ == "__main__":
         mean_tpf = np.mean(tpf.flux,axis=0)
         nx,ny = np.shape(mean_tpf)
         norm = ImageNormalize(stretch=stretching.LogStretch())
-        division = np.int(np.log10(np.nanmax(np.nanmean(tpf.flux.value,axis=0))))
+        division = int(np.log10(np.nanmax(np.nanmean(tpf.flux * u.s/u.electron,axis=0))))
         image = np.nanmean(tpf.flux,axis=0)/10**division
         splot = plt.imshow(image,norm=norm, \
         				extent=[tpf.column,tpf.column+ny,tpf.row,tpf.row+nx],origin='lower', zorder=0)
@@ -327,7 +327,7 @@ if __name__ == "__main__":
         										   1, 1, color=maskcolor, fill=False,alpha=1,lw=2))
 
         # Gaia sources
-        r, res = add_gaia_figure_elements(tpf,magnitude_limit=mag+np.float(args.maglim),targ_mag=mag)
+        r, res = add_gaia_figure_elements(tpf,magnitude_limit=mag+float(args.maglim),targ_mag=mag)
         x,y,gaiamags = r
         x, y, gaiamags=np.array(x)+0.5, np.array(y)+0.5, np.array(gaiamags)
         size = 128.0 / 2**((gaiamags-mag))
@@ -339,14 +339,14 @@ if __name__ == "__main__":
 
         # Legend
         add = 0
-        if np.int(args.maglim) % 2 != 0:
+        if int(args.maglim) % 2 != 0:
             add = 1
-        maxmag = np.int(args.maglim) + add
-        legend_mags = np.linspace(-2,maxmag,np.int((maxmag+2)/2+1))
+        maxmag = int(args.maglim) + add
+        legend_mags = np.linspace(-2,maxmag,int((maxmag+2)/2+1))
         fake_sizes = mag + legend_mags #np.array([mag-2,mag,mag+2,mag+5, mag+8])
         for f in fake_sizes:
             size = 128.0 / 2**((f-mag))
-            plt.scatter(0,0,s=size,c='red',alpha=0.6, edgecolor=None,zorder = 10,label = r'$\Delta m=$ '+str(np.int(f-mag)))
+            plt.scatter(0,0,s=size,c='red',alpha=0.6, edgecolor=None,zorder = 10,label = r'$\Delta m=$ '+str(int(f-mag)))
 
         ax1.legend(fancybox=True, framealpha=0.7, loc=args.legend)
 
