@@ -7,6 +7,22 @@
 ## Installation & Requirenments
  Clone this folder or download it to your computer. That's it!
 
+ Due to the latest changes in the lightkurve package (v2 and above) you will
+ need to upgrade the following packages to the corresponding versions:
+
+```
+numpy --> > 1.20.1
+matplotlib --> > 3.2.1
+astropy --> > 4.2
+lightkurve --> > 2.0.3
+```
+
+Remember that you can upgrade your packages by just using pip as, e.g.:
+
+```
+pip install numpy --upgrade
+```
+
 ***tpfplotter*** is written in both Python3.6 (tpfplotter_python3.py) Python2.7 (tpfplotter.py). But please note that since October 2020 only the Python3 version is kept up-to-date.
 
 ## Usage
