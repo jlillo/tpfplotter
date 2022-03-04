@@ -29,6 +29,14 @@ from astropy.table import Table, Column, MaskedColumn
 from astropy.io import ascii
 from astroquery.mast import Catalogs
 
+import warnings
+warnings.filterwarnings('ignore')
+
+# from matplotlib import rc
+# rc('font',**{'family':'sans-serif','sans-serif':['Tahoma'],'size':16})
+# rc('text', usetex=False)
+
+
 def cli():
     """command line inputs
 
@@ -44,10 +52,12 @@ def cli():
     parser.add_argument("-S", "--SAVEGAIA", help="Save Gaia sources", action="store_true")
     parser.add_argument("-C", "--COORD", help="Use coordinates", default=False)
     parser.add_argument("-n", "--name", help="Target name to be plotted in title", default=False)
+    parser.add_argument("-D2", "--DR2", help="Use Gaia DR2 catalog instead of EDR3", action="store_true")
     parser.add_argument("--maglim", default=5., help="Maximum magnitude contrast respect to TIC")
     parser.add_argument("--sector", default=None, help="Select Sector if more than one")
     parser.add_argument("--gid", default=None, help="Gaia ID")
     parser.add_argument("--gmag", default=None, help="Gaia mag")
+    parser.add_argument("--sradius", default=10., type=float, help="Search radius (in arcsec) for the get_gaia_data function")
     parser.add_argument("--legend", default='best', help="Legend location")
     args = parser.parse_args()
     return args
@@ -63,7 +73,14 @@ def add_gaia_figure_elements(tpf, magnitude_limit=18,targ_mag=10.):
     # We are querying with a diameter as the radius, overfilling by 2x.
     from astroquery.vizier import Vizier
     Vizier.ROW_LIMIT = -1
-    result = Vizier.query_region(c1, catalog=["I/345/gaia2"],
+
+    if args.DR2:
+        gaia_cat, catID = "I/345/gaia2", "DR2"
+        print('\t --> Using Gaia DR2 as requested by user...')
+    else:
+        gaia_cat, catID = "I/350/gaiaedr3", "EDR3"
+
+    result = Vizier.query_region(c1, catalog=[gaia_cat],
                                  radius=Angle(np.max(tpf.shape[1:]) * pix_scale, "arcsec"))
     no_targets_found_message = ValueError('Either no sources were found in the query region '
                                           'or Vizier is unavailable')
@@ -72,7 +89,7 @@ def add_gaia_figure_elements(tpf, magnitude_limit=18,targ_mag=10.):
         raise no_targets_found_message
     elif len(result) == 0:
         raise too_few_found_message
-    result = result["I/345/gaia2"].to_pandas()
+    result = result[gaia_cat].to_pandas()
     result = result[result.Gmag < magnitude_limit]
     if len(result) == 0:
         raise no_targets_found_message
@@ -131,7 +148,7 @@ def plot_orientation(tpf):
 
 
 
-def get_gaia_data(ra, dec):
+def get_gaia_data(ra, dec, search_radius=10.):
     """
     Get Gaia parameters
 
@@ -144,14 +161,20 @@ def get_gaia_data(ra, dec):
     # We are querying with a diameter as the radius, overfilling by 2x.
     from astroquery.vizier import Vizier
     Vizier.ROW_LIMIT = -1
-    result = Vizier.query_region(c1, catalog=["I/345/gaia2"],
-                                 radius=Angle(10., "arcsec"))
+    if args.DR2:
+        gaia_cat, catID = "I/345/gaia2", "DR2"
+        print('\t --> Using Gaia DR2 as requested by user...')
+    else:
+        gaia_cat, catID = "I/350/gaiaedr3", "EDR3"
+
+    result = Vizier.query_region(c1, catalog=[gaia_cat],
+                                 radius=Angle(search_radius, "arcsec"))
     try:
-    	result = result["I/345/gaia2"]
+    	result = result[gaia_cat]
     except:
-    	print('Not in Gaia DR2. If you know the Gaia ID and Gmag, try the options --gid and --gmag.')
-    	print('Exiting without finishing...')
-    	sys.exit()
+        print('Not in Gaia '+catID+'. If you know the Gaia ID and Gmag, try the options --gid and --gmag.')
+        print('Exiting without finishing...')
+        sys.exit()
 
     no_targets_found_message = ValueError('Either no sources were found in the query region '
                                           'or Vizier is unavailable')
@@ -214,6 +237,10 @@ def get_coord(tic):
 
 if __name__ == "__main__":
     args = cli()
+    # print("\n")
+    print("======================")
+    print("     tpfplotter       ")
+    print("======================\n")
     if args.LIST:
     	if args.COORD is not False:
     		_tics = np.genfromtxt(args.tic,dtype=None)
@@ -240,20 +267,20 @@ if __name__ == "__main__":
 
         if args.COORD  is not False:
         	ra,dec = ras[tt], decs[tt]
-        	print('Working on '+tic+' (ra = '+ra+', '+'dec = '+dec+') ...')
+        	print('* Working on '+tic+' (ra = '+ra+', '+'dec = '+dec+') ...')
         else:
         	ra,dec = get_coord(tic)
-        	print('Working on TIC'+tic+' (ra = '+str(ra)+', '+'dec = '+str(dec)+') ...')
+        	print('* Working on TIC'+tic+' (ra = '+str(ra)+', '+'dec = '+str(dec)+') ...')
 
         if args.gid != None:
         	gaia_id, mag = args.gid, float(args.gmag)
         else:
             if args.COORD  is not False:
-        	       gaia_id, mag = get_gaia_data(ra, dec)
+        	       gaia_id, mag = get_gaia_data(ra, dec, search_radius=args.sradius)
             else:
                 gaia_id, mag = get_gaia_data_from_tic(tic)
                 if np.isnan(mag):
-                    gaia_id, mag = get_gaia_data(ra, dec)
+                    gaia_id, mag = get_gaia_data(ra, dec, search_radius=args.sradius)
 
 
         # By coordinates -----------------------------------------------------------------
@@ -265,7 +292,7 @@ if __name__ == "__main__":
         	else:
         		tpf = search_tesscut(ra+" "+dec).download(cutout_size=(12,12))                             #
         	pipeline = "False"
-        	print('    --> Using TESScut to get the TPF')
+        	print('\t --> Using TESScut to get the TPF')
 
         # By TIC name --------------------------------------------------------------------
         else:
@@ -280,7 +307,7 @@ if __name__ == "__main__":
         			a = tpf.flux        # To check it has the flux array
         			pipeline = "True"
 
-        		print("    --> Target found in the CTL!")
+        		print("\t --> Target found in the CTL!")
 
         	# ... otherwise if it still has a TIC number:
         	except:
@@ -288,7 +315,7 @@ if __name__ == "__main__":
         			tpf = search_tesscut("TIC "+tic, sector=int(args.sector)).download(cutout_size=(12,12))
         		else:
         			tpf = search_tesscut("TIC "+tic).download(cutout_size=(12,12))
-        		print("    -->  Target not in CTL. The FFI cut out was succesfully downloaded")
+        		print("\t -->  Target not in CTL. The FFI cut out was succesfully downloaded")
         		pipeline = "False"
 
         fig = plt.figure(figsize=(6.93, 5.5))
@@ -310,12 +337,12 @@ if __name__ == "__main__":
         	aperture_mask = tpf.pipeline_mask
         	aperture = tpf._parse_aperture_mask(aperture_mask)
         	maskcolor = 'tomato'
-        	print("    --> Using pipeline aperture...")
+        	print("\t --> Using pipeline aperture...")
         else:
         	aperture_mask = tpf.create_threshold_mask(threshold=10,reference_pixel='center')
         	aperture = tpf._parse_aperture_mask(aperture_mask)
         	maskcolor = 'lightgray'
-        	print("    --> Using threshold aperture...")
+        	print("\t --> Using threshold aperture...")
 
 
         for i in range(aperture.shape[0]):
@@ -328,6 +355,11 @@ if __name__ == "__main__":
 
         # Gaia sources
         r, res = add_gaia_figure_elements(tpf,magnitude_limit=mag+float(args.maglim),targ_mag=mag)
+        # plt.figure(2)
+        # plt.scatter(res.RA_ICRS,res.DE_ICRS)
+        # for r,d,s in zip(res.RA_ICRS,res.DE_ICRS,res['Source']): plt.text(r,d,s)
+        # plt.plot(tpf.ra,tpf.dec,'s',c='none',markeredgecolor='red')
+        # plt.show()
         x,y,gaiamags = r
         x, y, gaiamags=np.array(x)+0.5, np.array(y)+0.5, np.array(gaiamags)
         size = 128.0 / 2**((gaiamags-mag))
@@ -346,16 +378,18 @@ if __name__ == "__main__":
         fake_sizes = mag + legend_mags #np.array([mag-2,mag,mag+2,mag+5, mag+8])
         for f in fake_sizes:
             size = 128.0 / 2**((f-mag))
-            plt.scatter(0,0,s=size,c='red',alpha=0.6, edgecolor=None,zorder = 10,label = r'$\Delta m=$ '+str(int(f-mag)))
+            plt.scatter(0,0,s=size,c='red',alpha=0.6, edgecolor=None,
+                        zorder = 10,label = r'$\Delta m=$ '+str(int(f-mag)))
 
-        ax1.legend(fancybox=True, framealpha=0.7, loc=args.legend)
+        ax1.legend(fancybox=True, framealpha=0.7, loc=args.legend,fontsize=14)
 
         # Source labels
         dist = np.sqrt((x-x[this])**2+(y-y[this])**2)
         dsort = np.argsort(dist)
         for d,elem in enumerate(dsort):
         	if dist[elem] < 6:
-        		plt.text(x[elem]+0.1,y[elem]+0.1,str(d+1),color='white', zorder=100)
+        		plt.text(x[elem]+0.1,y[elem]+0.1,str(d+1),color='white',
+                         zorder=100,fontsize=14)
 
         # Orientation arrows
         plot_orientation(tpf)
@@ -389,27 +423,30 @@ if __name__ == "__main__":
         cb.set_label(r'Flux '+exponent+r' (e$^-$)', labelpad=10, fontsize=16)
 
         plt.savefig('TPF_Gaia_TIC'+tic+'_S'+str(tpf.sector)+'.pdf')
+        print('\t --> TPF plot written in file: '+'TPF_Gaia_TIC'+tic+'_S'+str(tpf.sector)+'.pdf')
 
         # Save Gaia sources info
         if args.SAVEGAIA:
-        	dist = np.sqrt((x-x[this])**2+(y-y[this])**2)
-        	GaiaID = np.array(res['Source'])
-        	srt = np.argsort(dist)
-        	x, y, gaiamags, dist, GaiaID = x[srt], y[srt], gaiamags[srt], dist[srt], GaiaID[srt]
+            dist = np.sqrt((x-x[this])**2+(y-y[this])**2)
+            GaiaID = np.array(res['Source'])
+            srt = np.argsort(dist)
+            x, y, gaiamags, dist, GaiaID = x[srt], y[srt], gaiamags[srt], dist[srt], GaiaID[srt]
 
-        	IDs = np.arange(len(x))+1
-        	inside = np.zeros(len(x))
+            IDs = np.arange(len(x))+1
+            inside = np.zeros(len(x))
 
-        	for i in range(aperture.shape[0]):
-        		for j in range(aperture.shape[1]):
-        			if aperture_mask[i, j]:
-        				xtpf, ytpf = j+tpf.column, i+tpf.row
-        				_inside = np.where((x > xtpf) & (x < xtpf+1) &
-        						 		   (y > ytpf) & (y < ytpf+1))[0]
-        				inside[_inside] = 1
+            for i in range(aperture.shape[0]):
+            	for j in range(aperture.shape[1]):
+            		if aperture_mask[i, j]:
+            			xtpf, ytpf = j+tpf.column, i+tpf.row
+            			_inside = np.where((x > xtpf) & (x < xtpf+1) &
+            					 		   (y > ytpf) & (y < ytpf+1))[0]
+            			inside[_inside] = 1
 
 
 
-        	data = Table([IDs, GaiaID, x, y, dist, dist*21., gaiamags, inside.astype('int')],
-        				names=['# ID','GaiaID','x', 'y','Dist_pix','Dist_arcsec','Gmag', 'InAper'])
-        	ascii.write(data, 'Gaia_TIC'+tic+'_S'+str(tpf.sector)+'.dat',overwrite=True)
+            data = Table([IDs, GaiaID, x, y, dist, dist*21., gaiamags, inside.astype('int')],
+            			names=['# ID','GaiaID','x', 'y','Dist_pix','Dist_arcsec','Gmag', 'InAper'])
+            ascii.write(data, 'Gaia_TIC'+tic+'_S'+str(tpf.sector)+'.dat',overwrite=True)
+            print('\t --> Gaia close sources saved in file: '+'Gaia_TIC'+tic+'_S'+str(tpf.sector)+'.dat')
+        print("\t --> Done!\n")
