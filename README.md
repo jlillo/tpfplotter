@@ -1,5 +1,5 @@
 # tpfplotter
- Create paper-ready figures (1-column) overplotting the Gaia DR2 catalog to the TESS Target Pixel Files (TPF). You can create plots for any target observed by TESS! Even if you do not have a TIC number, you can search by coordinates now (see examples below)!
+ Create paper-ready figures (1-column) overplotting the Gaia EDR3 catalog to the TESS Target Pixel Files (TPF). You can create plots for any target observed by TESS! Even if you do not have a TIC number, you can search by coordinates now (see examples below)!
 
 ![alt text](https://github.com/jlillo/tpfplotter/blob/master/logo_tpfplotter.png)
 
@@ -23,7 +23,9 @@ Remember that you can upgrade your packages by just using pip as, e.g.:
 pip install numpy --upgrade
 ```
 
-***tpfplotter*** is written in both Python3.6 (tpfplotter_python3.py) Python2.7 (tpfplotter.py). But please note that since October 2020 only the Python3 version is kept up-to-date.
+***tpfplotter*** is written in both Python3.6 (tpfplotter.py) and Python2.7 (tpfplotter_py2.py). But please note that since October 2020 only the Python3 version is kept up-to-date.
+
+Since 4-March-2022 the default Gaia catalog used is EDR3. If you still want to use the DR2 catalog, please use the "--DR2" option.
 
 ## Usage
 Using tpfplotter is really easy.
