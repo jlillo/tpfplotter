@@ -54,6 +54,7 @@ def cli():
     parser.add_argument("-L", "--LIST", help="Only fit the LC", action="store_true")
     parser.add_argument("-S", "--SAVEGAIA", help="Save Gaia sources", action="store_true")
     parser.add_argument("-C", "--COORD", help="Use coordinates", default=False)
+    parser.add_argument("-d", "--DOWNLOAD_DIR", help="Directory for the cached TargetPixelFiles", default=None)
     parser.add_argument("-n", "--name", help="Target name to be plotted in title", default=False)
     parser.add_argument("-D2", "--DR2", help="Use Gaia DR2 catalog instead of DR3", action="store_true")
     parser.add_argument("-PM", "--PM", help="Add proper motion direction arrows in the plot", action="store_true")
@@ -314,6 +315,7 @@ if __name__ == "__main__":
     		tics = np.array([args.tic])
 
 
+    download_dir = args.DOWNLOAD_DIR
     for tt,tic in enumerate(tics):
 
         if args.COORD  is not False:
@@ -340,10 +342,10 @@ if __name__ == "__main__":
         if args.COORD  is not False:
         	                                                                             #
         	if args.sector != None:
-        		tpf = search_tesscut(ra+" "+dec, sector=int(args.sector)).download(cutout_size=(12,12))     #
+        		tpf = search_tesscut(ra+" "+dec, sector=int(args.sector)).download(cutout_size=(12,12), download_dir=download_dir)     #
 
         	else:
-        		tpf = search_tesscut(ra+" "+dec).download(cutout_size=(12,12))                             #
+        		tpf = search_tesscut(ra+" "+dec).download(cutout_size=(12,12), download_dir=download_dir)                             #
         	pipeline = "False"
         	print('\t --> Using TESScut to get the TPF')
 
@@ -352,11 +354,11 @@ if __name__ == "__main__":
         	# If the target is in the CTL (short-cadance targets)...
         	try:
         		if args.sector != None:
-        			tpf = search_targetpixelfile("TIC "+tic, sector=int(args.sector), mission='TESS').download()
+        			tpf = search_targetpixelfile("TIC "+tic, sector=int(args.sector), mission='TESS').download(download_dir=download_dir)
         			a = tpf.flux        # To check it has the flux array
         			pipeline = "True"
         		else:
-        			tpf = search_targetpixelfile("TIC "+tic, mission='TESS').download()
+        			tpf = search_targetpixelfile("TIC "+tic, mission='TESS').download(download_dir=download_dir)
         			a = tpf.flux        # To check it has the flux array
         			pipeline = "True"
 
@@ -365,9 +367,9 @@ if __name__ == "__main__":
         	# ... otherwise if it still has a TIC number:
         	except:
         		if args.sector != None:
-        			tpf = search_tesscut("TIC "+tic, sector=int(args.sector)).download(cutout_size=(12,12))
+        			tpf = search_tesscut("TIC "+tic, sector=int(args.sector)).download(cutout_size=(12,12), download_dir=download_dir)
         		else:
-        			tpf = search_tesscut("TIC "+tic).download(cutout_size=(12,12))
+        			tpf = search_tesscut("TIC "+tic).download(cutout_size=(12,12), download_dir=download_dir)
         		print("\t -->  Target not in CTL. The FFI cut out was succesfully downloaded")
         		pipeline = "False"
 
