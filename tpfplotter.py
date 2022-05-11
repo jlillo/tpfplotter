@@ -413,10 +413,10 @@ if __name__ == "__main__":
         corners = np.array([np.abs(x[this]-(tpf.column+nx)), np.abs(x[this]-tpf.column),
                                    np.abs(y[this]-(tpf.row+ny)), np.abs(y[this]-tpf.row)])
         mindist = np.min(corners)
-        xmin = tpf.column + 0.1*nx
-        xmax = tpf.column + 0.9*nx
-        ymin = tpf.row + 0.1*ny
-        ymax = tpf.row + 0.9*ny
+        xmin = tpf.column + 0.05*nx
+        xmax = tpf.column + 0.95*nx
+        ymin = tpf.row + 0.05*ny
+        ymax = tpf.row + 0.95*ny
         for d,elem in enumerate(dsort):
             if ( (x[elem] < xmax) & (x[elem] > xmin) & (y[elem] < ymax) & (y[elem] > ymin)  ):
                 plt.text(x[elem]+0.1,y[elem]+0.1,str(d+1),color='white', zorder=100,fontsize=14)
