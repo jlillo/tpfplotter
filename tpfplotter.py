@@ -28,6 +28,9 @@ from astropy.visualization.mpl_normalize import ImageNormalize
 from astropy.table import Table, Column, MaskedColumn
 from astropy.io import ascii
 from astroquery.mast import Catalogs
+from astroquery.simbad import Simbad
+Simbad.add_votable_fields('pmra', 'pmdec')
+from astroquery.gaia import Gaia
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -214,6 +217,27 @@ def get_gaia_data_from_tic(tic):
     return GAIA_k, Gaiamag_k
 
 
+def get_gaia_data_from_simbad(tic):
+    simb = Simbad.query_object('TIC'+tic)
+    simbid = Simbad.query_objectids('TIC'+tic)
+    ids = np.array(simbid['ID'].data).astype(str)
+    myid = [id for id in ids if 'EDR3' in id]
+    myid = myid[0].split(' ')[2]
+
+    query2 = "SELECT \
+             TOP 1 \
+             source_id, ra, dec, pmra, pmdec, parallax, phot_g_mean_mag\
+             FROM gaiaedr3.gaia_source\
+             WHERE source_id = "+str(myid)+" \
+             "
+    job = Gaia.launch_job_async(query2)
+    gmag = job.get_results()['phot_g_mean_mag'].data[0]
+
+    return myid,gmag
+
+
+
+
 def get_coord(tic):
 	"""
 	Get TIC corrdinates
@@ -278,7 +302,7 @@ if __name__ == "__main__":
             if args.COORD  is not False:
         	       gaia_id, mag = get_gaia_data(ra, dec, search_radius=args.sradius)
             else:
-                gaia_id, mag = get_gaia_data_from_tic(tic)
+                gaia_id, mag = get_gaia_data_from_simbad(tic)
                 if np.isnan(mag):
                     gaia_id, mag = get_gaia_data(ra, dec, search_radius=args.sradius)
 
@@ -386,10 +410,16 @@ if __name__ == "__main__":
         # Source labels
         dist = np.sqrt((x-x[this])**2+(y-y[this])**2)
         dsort = np.argsort(dist)
+        corners = np.array([np.abs(x[this]-(tpf.column+nx)), np.abs(x[this]-tpf.column),
+                                   np.abs(y[this]-(tpf.row+ny)), np.abs(y[this]-tpf.row)])
+        mindist = np.min(corners)
+        xmin = tpf.column + 0.1*nx
+        xmax = tpf.column + 0.9*nx
+        ymin = tpf.row + 0.1*ny
+        ymax = tpf.row + 0.9*ny
         for d,elem in enumerate(dsort):
-        	if dist[elem] < 6:
-        		plt.text(x[elem]+0.1,y[elem]+0.1,str(d+1),color='white',
-                         zorder=100,fontsize=14)
+            if ( (x[elem] < xmax) & (x[elem] > xmin) & (y[elem] < ymax) & (y[elem] > ymin)  ):
+                plt.text(x[elem]+0.1,y[elem]+0.1,str(d+1),color='white', zorder=100,fontsize=14)
 
         # Orientation arrows
         plot_orientation(tpf)
