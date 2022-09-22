@@ -55,7 +55,7 @@ def cli():
     parser.add_argument("-S", "--SAVEGAIA", help="Save Gaia sources", action="store_true")
     parser.add_argument("-C", "--COORD", help="Use coordinates", default=False)
     parser.add_argument("-n", "--name", help="Target name to be plotted in title", default=False)
-    parser.add_argument("-D2", "--DR2", help="Use Gaia DR2 catalog instead of EDR3", action="store_true")
+    parser.add_argument("-D2", "--DR2", help="Use Gaia DR2 catalog instead of DR3", action="store_true")
     parser.add_argument("--maglim", default=5., help="Maximum magnitude contrast respect to TIC")
     parser.add_argument("--sector", default=None, help="Select Sector if more than one")
     parser.add_argument("--gid", default=None, help="Gaia ID")
@@ -81,7 +81,7 @@ def add_gaia_figure_elements(tpf, magnitude_limit=18,targ_mag=10.):
         gaia_cat, catID = "I/345/gaia2", "DR2"
         print('\t --> Using Gaia DR2 as requested by user...')
     else:
-        gaia_cat, catID = "I/350/gaiaedr3", "EDR3"
+        gaia_cat, catID = "I/355/gaiadr3", "DR3"
 
     result = Vizier.query_region(c1, catalog=[gaia_cat],
                                  radius=Angle(np.max(tpf.shape[1:]) * pix_scale, "arcsec"))
@@ -168,7 +168,7 @@ def get_gaia_data(ra, dec, search_radius=10.):
         gaia_cat, catID = "I/345/gaia2", "DR2"
         print('\t --> Using Gaia DR2 as requested by user...')
     else:
-        gaia_cat, catID = "I/350/gaiaedr3", "EDR3"
+        gaia_cat, catID = "I/355/gaiadr3", "DR3"
 
     result = Vizier.query_region(c1, catalog=[gaia_cat],
                                  radius=Angle(search_radius, "arcsec"))
@@ -194,7 +194,7 @@ def get_gaia_data(ra, dec, search_radius=10.):
     else:
         return result[0]['Source'], result[0]['Gmag']
 
-def get_gaia_data_from_tic(tic):
+def get_dr2_id_from_tic(tic):
     '''
     Get Gaia parameters
 
@@ -217,17 +217,18 @@ def get_gaia_data_from_tic(tic):
     return GAIA_k, Gaiamag_k
 
 
-def get_gaia_data_from_simbad(tic):
-    simb = Simbad.query_object('TIC'+tic)
-    simbid = Simbad.query_objectids('TIC'+tic)
+def get_gaia_data_from_simbad(dr2ID):
+    print(dr2ID)
+    simb = Simbad.query_object('Gaia DR2 '+dr2ID)
+    simbid = Simbad.query_objectids('Gaia DR2 '+dr2ID)
     ids = np.array(simbid['ID'].data).astype(str)
-    myid = [id for id in ids if 'EDR3' in id]
+    myid = [id for id in ids if 'DR3' in id]
     myid = myid[0].split(' ')[2]
 
     query2 = "SELECT \
              TOP 1 \
              source_id, ra, dec, pmra, pmdec, parallax, phot_g_mean_mag\
-             FROM gaiaedr3.gaia_source\
+             FROM gaiadr3.gaia_source\
              WHERE source_id = "+str(myid)+" \
              "
     job = Gaia.launch_job_async(query2)
@@ -252,7 +253,7 @@ def get_coord(tic):
 		dec = catalog_data[0]["dec"]
 		return ra, dec
 	except:
-		print("ERROR: No gaia ID found for this TIC")
+		print("ERROR: TIC not found in Simbad")
 
 
 # ======================================
@@ -302,7 +303,8 @@ if __name__ == "__main__":
             if args.COORD  is not False:
         	       gaia_id, mag = get_gaia_data(ra, dec, search_radius=args.sradius)
             else:
-                gaia_id, mag = get_gaia_data_from_simbad(tic)
+                dr2ID,_ = get_dr2_id_from_tic(tic)
+                gaia_id, mag = get_gaia_data_from_simbad(dr2ID)
                 if np.isnan(mag):
                     gaia_id, mag = get_gaia_data(ra, dec, search_radius=args.sradius)
 
