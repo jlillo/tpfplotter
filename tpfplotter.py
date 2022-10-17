@@ -353,7 +353,7 @@ if __name__ == "__main__":
         mean_tpf = np.mean(tpf.flux,axis=0)
         nx,ny = np.shape(mean_tpf)
         norm = ImageNormalize(stretch=stretching.LogStretch())
-        division = int(np.log10(np.nanmax(np.nanmean(tpf.flux * u.s/u.electron,axis=0))))
+        division = int(np.log10(np.nanmax(np.nanmean(tpf.flux.value ,axis=0)))) #* u.s/u.electron
         image = np.nanmean(tpf.flux,axis=0)/10**division
         splot = plt.imshow(image,norm=norm, \
         				extent=[tpf.column,tpf.column+ny,tpf.row,tpf.row+nx],origin='lower', zorder=0)
