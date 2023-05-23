@@ -123,7 +123,7 @@ def plot_orientation(tpf):
 	"""
 	mean_tpf = np.mean(tpf.flux,axis=0)
 	nx,ny = np.shape(mean_tpf)
-	x0,y0 = tpf.column+int(0.2*nx),tpf.row+int(0.2*ny)
+	x0,y0 = tpf.column+int(0.2*nx)+0.5,tpf.row+int(0.2*ny)+0.5
 	# East
 	tmp =  tpf.get_coordinates()
 	ra00, dec00 = tmp[0][0][0][0], tmp[1][0][0][0]
@@ -218,9 +218,10 @@ def get_dr2_id_from_tic(tic):
 
 
 def get_gaia_data_from_simbad(dr2ID):
-    print(dr2ID)
     simb = Simbad.query_object('Gaia DR2 '+dr2ID)
     simbid = Simbad.query_objectids('Gaia DR2 '+dr2ID)
+    if simbid == None:
+        print("ERROR: TIC not found as Gaia DR2 "+str(dr2ID))
     ids = np.array(simbid['ID'].data).astype(str)
     myid = [id for id in ids if 'DR3' in id]
     myid = myid[0].split(' ')[2]
@@ -240,20 +241,22 @@ def get_gaia_data_from_simbad(dr2ID):
 
 
 def get_coord(tic):
-	"""
-	Get TIC corrdinates
+    """
+    Get TIC corrdinates
 
-	Returns
-	-------
-	TIC number
-	"""
-	try:
-		catalog_data = Catalogs.query_object(objectname="TIC"+tic, catalog="TIC")
-		ra = catalog_data[0]["ra"]
-		dec = catalog_data[0]["dec"]
-		return ra, dec
-	except:
-		print("ERROR: TIC not found in Simbad")
+    Returns
+    -------
+    TIC number
+    """
+    try:
+        catalog_data = Catalogs.query_object(objectname="TIC"+tic, catalog="TIC")
+        ra = catalog_data[0]["ra"]
+        dec = catalog_data[0]["dec"]
+        # print(catalog_data.keys())
+        # print(catalog_data[0]["GAIA"])
+        return ra, dec
+    except:
+    	print("ERROR: TIC not found in Simbad")
 
 
 # ======================================
@@ -356,7 +359,7 @@ if __name__ == "__main__":
         division = int(np.log10(np.nanmax(np.nanmean(tpf.flux.value ,axis=0)))) #* u.s/u.electron
         image = np.nanmean(tpf.flux,axis=0)/10**division
         splot = plt.imshow(image,norm=norm, \
-        				extent=[tpf.column,tpf.column+ny,tpf.row,tpf.row+nx],origin='lower', zorder=0)
+        				extent=[tpf.column+0.5,tpf.column+ny+0.5,tpf.row+0.5,tpf.row+nx+0.5],origin='lower', zorder=0)
 
         # Pipeline aperture
         if pipeline == "True":                                           #
@@ -374,9 +377,9 @@ if __name__ == "__main__":
         for i in range(aperture.shape[0]):
         	for j in range(aperture.shape[1]):
         		if aperture_mask[i, j]:
-        			ax1.add_patch(patches.Rectangle((j+tpf.column, i+tpf.row),
+        			ax1.add_patch(patches.Rectangle((j+tpf.column+0.5, i+tpf.row+0.5),
         										   1, 1, color=maskcolor, fill=True,alpha=0.4))
-        			ax1.add_patch(patches.Rectangle((j+tpf.column, i+tpf.row),
+        			ax1.add_patch(patches.Rectangle((j+tpf.column+0.5, i+tpf.row+0.5),
         										   1, 1, color=maskcolor, fill=False,alpha=1,lw=2))
 
         # Gaia sources
@@ -389,11 +392,11 @@ if __name__ == "__main__":
         x,y,gaiamags = r
         x, y, gaiamags=np.array(x)+0.5, np.array(y)+0.5, np.array(gaiamags)
         size = 128.0 / 2**((gaiamags-mag))
-        plt.scatter(x,y,s=size,c='red',alpha=0.6, edgecolor=None,zorder = 10)
+        plt.scatter(x+0.5,y+0.5,s=size,c='red',alpha=0.6, edgecolor=None,zorder = 10)
 
         # Gaia source for the target
         this = np.where(np.array(res['Source']) == int(gaia_id))[0]
-        plt.scatter(x[this],y[this],marker='x',c='white',s=32,zorder = 11)
+        plt.scatter(x[this]+0.5,y[this]+0.5,marker='x',c='white',s=32,zorder = 11)
 
         # Legend
         add = 0
@@ -420,16 +423,16 @@ if __name__ == "__main__":
         ymin = tpf.row + 0.05*ny
         ymax = tpf.row + 0.95*ny
         for d,elem in enumerate(dsort):
-            if ( (x[elem] < xmax) & (x[elem] > xmin) & (y[elem] < ymax) & (y[elem] > ymin)  ):
-                plt.text(x[elem]+0.1,y[elem]+0.1,str(d+1),color='white', zorder=100,fontsize=14)
+            if ( (x[elem]+0.5 < xmax) & (x[elem]+0.5 > xmin) & (y[elem]+0.5 < ymax) & (y[elem]+0.5 > ymin)  ):
+                plt.text(x[elem]+0.1+0.5,y[elem]+0.1+0.5,str(d+1),color='white', zorder=100,fontsize=14)
 
         # Orientation arrows
         plot_orientation(tpf)
 
         # Labels and titles
         # Reverse x limits so that image plots as seen on the sky:
-        plt.xlim(tpf.column+ny,tpf.column)
-        plt.ylim(tpf.row,tpf.row+nx)
+        plt.xlim(tpf.column+ny+0.5,tpf.column+0.5)
+        plt.ylim(tpf.row+0.5,tpf.row+nx+0.5)
         plt.xlabel('Pixel Column Number', fontsize=16, zorder=200)
         plt.ylabel('Pixel Row Number', fontsize=16, zorder=200)
         if args.COORD is not False:                                                                                          #
@@ -452,7 +455,7 @@ if __name__ == "__main__":
         plt.xticks(fontsize=14)
         #cbax.set_yticklabels(["{:4.2f}".format(i) for i in cbar_ticks])
         exponent = r'$\times 10^'+str(division)+'$'
-        cb.set_label(r'Flux '+exponent+r' (e$^-$)', labelpad=10, fontsize=16)
+        cb.set_label(r'Flux '+exponent+r' (e$^-$/s)', labelpad=10, fontsize=16)
 
         plt.savefig('TPF_Gaia_TIC'+tic+'_S'+str(tpf.sector)+'.pdf')
         print('\t --> TPF plot written in file: '+'TPF_Gaia_TIC'+tic+'_S'+str(tpf.sector)+'.pdf')
