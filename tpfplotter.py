@@ -224,6 +224,8 @@ def get_gaia_data_from_simbad(dr2ID):
         print("ERROR: TIC not found as Gaia DR2 "+str(dr2ID))
     ids = np.array(simbid['ID'].data).astype(str)
     myid = [id for id in ids if 'DR3' in id]
+    if len(myid) == 0:
+        myid = [id for id in ids if 'DR2' in id]
     myid = myid[0].split(' ')[2]
 
     query2 = "SELECT \
