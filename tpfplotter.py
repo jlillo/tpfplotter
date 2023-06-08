@@ -56,6 +56,7 @@ def cli():
     parser.add_argument("-C", "--COORD", help="Use coordinates", default=False)
     parser.add_argument("-n", "--name", help="Target name to be plotted in title", default=False)
     parser.add_argument("-D2", "--DR2", help="Use Gaia DR2 catalog instead of DR3", action="store_true")
+    parser.add_argument("-PM", "--PM", help="Add proper motion direction arrows in the plot", action="store_true")
     parser.add_argument("--maglim", default=5., help="Maximum magnitude contrast respect to TIC")
     parser.add_argument("--sector", default=None, help="Select Sector if more than one")
     parser.add_argument("--gid", default=None, help="Gaia ID")
@@ -65,7 +66,7 @@ def cli():
     args = parser.parse_args()
     return args
 
-def add_gaia_figure_elements(tpf, magnitude_limit=18,targ_mag=10.):
+def add_gaia_figure_elements(tpf, magnitude_limit=18,targ_mag=10.,gaia_id=None):
     """Make the Gaia Figure Elements"""
     # Get the positions of the Gaia sources
     c1 = SkyCoord(tpf.ra, tpf.dec, frame='icrs', unit='deg')
@@ -104,10 +105,18 @@ def add_gaia_figure_elements(tpf, magnitude_limit=18,targ_mag=10.):
     radecs = np.vstack([result['RA_ICRS'], result['DE_ICRS']]).T
     coords = tpf.wcs.all_world2pix(radecs, 0.5) ## TODO, is origin supposed to be zero or one?
 
+    # Get positions to plot arrows for proper motion
+    this = np.where(np.array(result['Source']) == int(gaia_id))[0]
+    factor = np.sqrt((21*1e3)**2/(np.asarray(result.pmRA)[this]**2 + np.asarray(result.pmDE)[this]**2)) 
+    scaled_pmra = result.pmRA*1e-3*factor/3600
+    scaled_pmde = result.pmDE*1e-3*factor/3600
+    endpoint = np.vstack([result['RA_ICRS']+scaled_pmra, result['DE_ICRS']+scaled_pmde   ]).T
+    coords_endpoint = tpf.wcs.all_world2pix(endpoint, 0.5)
+
     # Gently size the points by their Gaia magnitude
     sizes = 128.0 / 2**(result['Gmag']/targ_mag)#64.0 / 2**(result['Gmag']/5.0)
     one_over_parallax = 1.0 / (result['Plx']/1000.)
-    r = (coords[:, 0]+tpf.column,coords[:, 1]+tpf.row,result['Gmag'])
+    r = (coords[:, 0]+tpf.column,coords[:, 1]+tpf.row,result['Gmag'],coords_endpoint[:, 0]+tpf.column, coords_endpoint[:, 1]+tpf.row)
 
     return r,result
 
@@ -218,15 +227,24 @@ def get_dr2_id_from_tic(tic):
 
 
 def get_gaia_data_from_simbad(dr2ID):
-    simb = Simbad.query_object('Gaia DR2 '+dr2ID)
-    simbid = Simbad.query_objectids('Gaia DR2 '+dr2ID)
-    if simbid == None:
-        print("ERROR: TIC not found as Gaia DR2 "+str(dr2ID))
-    ids = np.array(simbid['ID'].data).astype(str)
-    myid = [id for id in ids if 'DR3' in id]
-    if len(myid) == 0:
-        myid = [id for id in ids if 'DR2' in id]
-    myid = myid[0].split(' ')[2]
+    # simb = Simbad.query_object('Gaia DR2 '+dr2ID)
+    # simbid = Simbad.query_objectids('Gaia DR2 '+dr2ID)
+    # if simbid == None:
+    #     print("ERROR: TIC not found in Simbad as Gaia DR2 "+str(dr2ID))
+    # ids = np.array(simbid['ID'].data).astype(str)
+    # myid = [id for id in ids if 'DR3' in id]
+    # if len(myid) == 0:
+    #     myid = [id for id in ids if 'DR2' in id]
+    # myid = myid[0].split(' ')[2]
+
+    query_dr3fromdr2 = "select dr3_source_id from gaiadr3.dr2_neighbourhood where dr2_source_id = "+dr2ID
+    job = Gaia.launch_job(query=query_dr3fromdr2)
+    dr3_ids = ob.results['dr3_source_id'].value.data
+    if len(dr3_ids) == 1:
+        myid = dr3_ids[0]
+    else:
+        print("\t WARNING! There are more than one DR3 ids for this DR2 ID, assuming the first one...")
+        myid = dr3_ids[0]
 
     query2 = "SELECT \
              TOP 1 \
@@ -308,8 +326,9 @@ if __name__ == "__main__":
             if args.COORD  is not False:
         	       gaia_id, mag = get_gaia_data(ra, dec, search_radius=args.sradius)
             else:
-                dr2ID,_ = get_dr2_id_from_tic(tic)
-                gaia_id, mag = get_gaia_data_from_simbad(dr2ID)
+                # dr2ID,_ = get_dr2_id_from_tic(tic)
+                gaia_id, mag = get_dr2_id_from_tic(tic)
+                # gaia_id, mag = get_gaia_data_from_simbad(dr2ID)
                 if np.isnan(mag):
                     gaia_id, mag = get_gaia_data(ra, dec, search_radius=args.sradius)
 
@@ -385,16 +404,19 @@ if __name__ == "__main__":
         										   1, 1, color=maskcolor, fill=False,alpha=1,lw=2))
 
         # Gaia sources
-        r, res = add_gaia_figure_elements(tpf,magnitude_limit=mag+float(args.maglim),targ_mag=mag)
+        r, res = add_gaia_figure_elements(tpf,magnitude_limit=mag+float(args.maglim),targ_mag=mag, gaia_id=gaia_id)
         # plt.figure(2)
         # plt.scatter(res.RA_ICRS,res.DE_ICRS)
         # for r,d,s in zip(res.RA_ICRS,res.DE_ICRS,res['Source']): plt.text(r,d,s)
         # plt.plot(tpf.ra,tpf.dec,'s',c='none',markeredgecolor='red')
         # plt.show()
-        x,y,gaiamags = r
-        x, y, gaiamags=np.array(x)+0.5, np.array(y)+0.5, np.array(gaiamags)
+        x,y,gaiamags, xpm, ypm = r
+        x, y, gaiamags, xarrow, yarrow = np.array(x)+0.5, np.array(y)+0.5, np.array(gaiamags), np.array(xpm)+0.5, np.array(ypm)+0.5
         size = 128.0 / 2**((gaiamags-mag))
         plt.scatter(x+0.5,y+0.5,s=size,c='red',alpha=0.6, edgecolor=None,zorder = 10)
+        if args.PM:
+            for i in range(len(x)):
+                plt.arrow(x[i]+0.5,y[i]+0.5, xpm[i]-x[i], (ypm[i]-y[i]), head_width=0.1, head_length=0.15, overhang=0.2,color='gray',alpha=0.8)
 
         # Gaia source for the target
         this = np.where(np.array(res['Source']) == int(gaia_id))[0]
