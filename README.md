@@ -64,6 +64,12 @@ You can also save the list of Gaia sources in the TPF in a separate ascii file c
 python tpfplotter.py 150428135 --maglim 6 --SAVEGAIA --sector 4
 ```
 
+As of June 8th, you can also plot the proper motion directions of all targets within the TPF. Simply add the "--PM" option to your command like this:
+
+```
+python tpfplotter.py 150428135 --maglim 6 --PM
+```
+
 ## Papers using tpfplotter
 Several papers involving different science cases have already used TPF plotter. A sample of them are highlighted here:
 
