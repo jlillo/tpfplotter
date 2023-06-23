@@ -225,6 +225,17 @@ def get_dr2_id_from_tic(tic):
         GAIA_k = np.nan
     return GAIA_k, Gaiamag_k
 
+def dr3_from_dr2(dr2ID):
+    query_dr3fromdr2 = "select dr3_source_id from gaiadr3.dr2_neighbourhood where dr2_source_id = "+dr2ID
+    job = Gaia.launch_job(query=query_dr3fromdr2)
+    dr3_ids = job.results['dr3_source_id'].value.data
+    if len(dr3_ids) == 1:
+        myid = dr3_ids[0]
+    else:
+        print("\t WARNING! There are more than one DR3 ids for this DR2 ID, assuming the first one...")
+        myid = dr3_ids[0]
+
+    return myid
 
 def get_gaia_data_from_simbad(dr2ID):
     # simb = Simbad.query_object('Gaia DR2 '+dr2ID)
@@ -237,15 +248,7 @@ def get_gaia_data_from_simbad(dr2ID):
     #     myid = [id for id in ids if 'DR2' in id]
     # myid = myid[0].split(' ')[2]
 
-    query_dr3fromdr2 = "select dr3_source_id from gaiadr3.dr2_neighbourhood where dr2_source_id = "+dr2ID
-    job = Gaia.launch_job(query=query_dr3fromdr2)
-    dr3_ids = ob.results['dr3_source_id'].value.data
-    if len(dr3_ids) == 1:
-        myid = dr3_ids[0]
-    else:
-        print("\t WARNING! There are more than one DR3 ids for this DR2 ID, assuming the first one...")
-        myid = dr3_ids[0]
-
+    myid = dr3_from_dr2(dr2ID)
     query2 = "SELECT \
              TOP 1 \
              source_id, ra, dec, pmra, pmdec, parallax, phot_g_mean_mag\
@@ -328,11 +331,11 @@ if __name__ == "__main__":
             else:
                 # dr2ID,_ = get_dr2_id_from_tic(tic)
                 gaia_id, mag = get_dr2_id_from_tic(tic)
+                gaia_id = dr3_from_dr2(gaia_id)
                 # gaia_id, mag = get_gaia_data_from_simbad(dr2ID)
                 if np.isnan(mag):
                     gaia_id, mag = get_gaia_data(ra, dec, search_radius=args.sradius)
-
-
+                    
         # By coordinates -----------------------------------------------------------------
         if args.COORD  is not False:
         	                                                                             #
