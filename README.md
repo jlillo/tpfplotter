@@ -71,7 +71,7 @@ You can also save the list of Gaia sources in the TPF in a separate ascii file c
 python tpfplotter.py 150428135 --maglim 6 --SAVEGAIA --sector 4
 ```
 
-Note: the `--SAVEGAIA option also works with lists, saving one file per entry in the list file.`
+Note: the `--SAVEGAIA` option also works with lists, saving one file per entry in the list file.`
 
 As of June 8th, you can also plot the proper motion directions of all targets within the TPF. Simply add the "--PM" option to your command like this:
 
