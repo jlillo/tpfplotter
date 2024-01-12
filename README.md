@@ -52,6 +52,13 @@ Also, if you have a list of TIC values just type:
 python tpfplotter.py list_of_tics.lis --LIST --maglim 6
 ```
 
+Your list can also specify the required options (maglim, sector, name, ra, dec) for each of the targets by including the corresponding columns. You can use the `example_list.lis` file as a template. The usage of lists in this case would be:
+
+```
+python tpfplotter.py example_list.lis --LIST
+```
+
+
 In case ***tpfplotter*** is not able to find the target in the Gaia catalog, you can overcome this by providing the Gaia ID and Gmag as input in the following way:
 
 ```
@@ -63,6 +70,8 @@ You can also save the list of Gaia sources in the TPF in a separate ascii file c
 ```
 python tpfplotter.py 150428135 --maglim 6 --SAVEGAIA --sector 4
 ```
+
+Note: the `--SAVEGAIA option also works with lists, saving one file per entry in the list file.`
 
 As of June 8th, you can also plot the proper motion directions of all targets within the TPF. Simply add the "--PM" option to your command like this:
 
