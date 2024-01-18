@@ -321,9 +321,12 @@ if __name__ == "__main__":
             print("\t\t --> NAME column found in file, using costum (requested) name in plot for each target")
             args.name = tab['name'].values
         print("\n")
-        
+
     else:
         tics = np.array([args.tic])
+        args.sector = np.atleast_1d(args.sector)
+        args.maglim = np.atleast_1d(args.maglim)
+        args.name = np.atleast_1d(args.name)
         if args.COORD:
             coords = args.COORD
             ras, decs = np.atleast_1d(np.array([coords.split(',')[0]])), np.atleast_1d(np.array([coords.split(',')[1]]))
