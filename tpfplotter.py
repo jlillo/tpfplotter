@@ -54,7 +54,7 @@ def cli():
     parser.add_argument("-L", "--LIST", help="Only fit the LC", action="store_true")
     parser.add_argument("-S", "--SAVEGAIA", help="Save Gaia sources", action="store_true")
     parser.add_argument("-C", "--COORD", help="Use coordinates", default=False)
-    parser.add_argument("-n", "--name", help="Target name to be plotted in title", default=False)
+    parser.add_argument("-n", "--name", help="Target name to be plotted in title", default=None)
     parser.add_argument("-D2", "--DR2", help="Use Gaia DR2 catalog instead of DR3", action="store_true")
     parser.add_argument("-PM", "--PM", help="Add proper motion direction arrows in the plot", action="store_true")
     parser.add_argument("--maglim", default=5., help="Maximum magnitude contrast respect to TIC",type=float)
@@ -103,7 +103,7 @@ def add_gaia_figure_elements(tpf, magnitude_limit=18,targ_mag=10.,gaia_id=None):
     result.RA_ICRS += pmra
     result.DE_ICRS += pmdec
     radecs = np.vstack([result['RA_ICRS'], result['DE_ICRS']]).T
-    coords = tpf.wcs.all_world2pix(radecs, 0.5) ## TODO, is origin supposed to be zero or one?
+    coords = tpf.wcs.all_world2pix(radecs, -0.5) ## TODO, is origin supposed to be zero or one?
 
     # Get positions to plot arrows for proper motion
     this = np.where(np.array(result['Source']) == int(gaia_id))[0]
@@ -111,7 +111,7 @@ def add_gaia_figure_elements(tpf, magnitude_limit=18,targ_mag=10.,gaia_id=None):
     scaled_pmra = result.pmRA*1e-3*factor/3600
     scaled_pmde = result.pmDE*1e-3*factor/3600
     endpoint = np.vstack([result['RA_ICRS']+scaled_pmra, result['DE_ICRS']+scaled_pmde   ]).T
-    coords_endpoint = tpf.wcs.all_world2pix(endpoint, 0.5)
+    coords_endpoint = tpf.wcs.all_world2pix(endpoint, -0.5)
 
     # Gently size the points by their Gaia magnitude
     sizes = 128.0 / 2**(result['Gmag']/targ_mag)#64.0 / 2**(result['Gmag']/5.0)
@@ -132,7 +132,7 @@ def plot_orientation(tpf):
 	"""
 	mean_tpf = np.mean(tpf.flux,axis=0)
 	nx,ny = np.shape(mean_tpf)
-	x0,y0 = tpf.column+int(0.2*nx)+0.5,tpf.row+int(0.2*ny)+0.5
+	x0,y0 = tpf.column+int(0.2*nx)-0.5,tpf.row+int(0.2*ny)-0.5
 	# East
 	tmp =  tpf.get_coordinates()
 	ra00, dec00 = tmp[0][0][0][0], tmp[1][0][0][0]
@@ -262,7 +262,10 @@ def get_gaia_data_from_simbad(dr2ID):
 
     return myid,gmag
 
-
+def sigmaG(array):
+    q75 = np.percentile(array,75)
+    q25 = np.percentile(array,25)
+    return 0.7413 * (q75 - q25)
 
 
 def get_coord(tic):
@@ -298,7 +301,7 @@ if __name__ == "__main__":
     if args.LIST:
         print("* Using file "+args.tic+" as the list of requested targets *")
         import pandas as pd
-        tab = pd.read_table(args.tic,sep=' ')
+        tab = pd.read_table(args.tic,delimiter=' ',header=0)
         tab_colnames = tab.columns.values
         tics = tab['tic'].values # Even if no TIC name is provided, please use this column name in the file
         Ntargets = len(tics)
@@ -317,10 +320,16 @@ if __name__ == "__main__":
         if 'maglim' in tab_colnames:
             print("\t\t --> MAGLIM column found in file, using costum (requested) maglim for each target")
             args.maglim = tab['sector'].values
-        if 'names' in tab_colnames:
+        if 'name' in tab_colnames:
             print("\t\t --> NAME column found in file, using costum (requested) name in plot for each target")
             args.name = tab['name'].values
         print("\n")
+
+        # Create folder to save files:
+        filelist = args.tic
+        foldname = filelist.split('.')[0]
+        if os.path.isdir(foldname) == False:
+            os.mkdir(foldname)
 
     else:
         tics = np.array([args.tic])
@@ -330,6 +339,7 @@ if __name__ == "__main__":
         if args.COORD:
             coords = args.COORD
             ras, decs = np.atleast_1d(np.array([coords.split(',')[0]])), np.atleast_1d(np.array([coords.split(',')[1]]))
+        foldname = './'
 
 
     for tt,tic in enumerate(tics):
@@ -404,7 +414,7 @@ if __name__ == "__main__":
         division = int(np.log10(np.nanmax(np.nanmean(tpf.flux.value ,axis=0)))) #* u.s/u.electron
         image = np.nanmean(tpf.flux,axis=0)/10**division
         splot = plt.imshow(image.value,norm=norm, \
-                        extent=[tpf.column+0.5,tpf.column+ny+0.5,tpf.row+0.5,tpf.row+nx+0.5],origin='lower', zorder=0)
+                        extent=[tpf.column-0.5,tpf.column+ny-0.5,tpf.row-0.5,tpf.row+nx-0.5],origin='lower', zorder=0)
 
         # Pipeline aperture
         if pipeline == "True":                                           #
@@ -413,7 +423,7 @@ if __name__ == "__main__":
             maskcolor = 'tomato'
             print("\t --> Using pipeline aperture...")
         else:
-            aperture_mask = tpf.create_threshold_mask(threshold=10,reference_pixel='center')
+            aperture_mask = tpf.create_threshold_mask(threshold=3,reference_pixel=(int(nx/2),int(ny/2)))
             aperture = tpf._parse_aperture_mask(aperture_mask)
             maskcolor = 'lightgray'
             print("\t --> Using threshold aperture...")
@@ -422,9 +432,9 @@ if __name__ == "__main__":
         for i in range(aperture.shape[0]):
             for j in range(aperture.shape[1]):
                 if aperture_mask[i, j]:
-                    ax1.add_patch(patches.Rectangle((j+tpf.column+0.5, i+tpf.row+0.5),
+                    ax1.add_patch(patches.Rectangle((j+tpf.column-0.5, i+tpf.row-0.5),
                                                     1, 1, color=maskcolor, fill=True,alpha=0.4))
-                    ax1.add_patch(patches.Rectangle((j+tpf.column+0.5, i+tpf.row+0.5),
+                    ax1.add_patch(patches.Rectangle((j+tpf.column-0.5, i+tpf.row-0.5),
                                                     1, 1, color=maskcolor, fill=False,alpha=1,lw=2))
 
         # Gaia sources
@@ -435,16 +445,16 @@ if __name__ == "__main__":
         # plt.plot(tpf.ra,tpf.dec,'s',c='none',markeredgecolor='red')
         # plt.show()
         x,y,gaiamags, xpm, ypm = r
-        x, y, gaiamags, xarrow, yarrow = np.array(x)+0.5, np.array(y)+0.5, np.array(gaiamags), np.array(xpm)+0.5, np.array(ypm)+0.5
+        x, y, gaiamags, xarrow, yarrow = np.array(x), np.array(y), np.array(gaiamags), np.array(xpm), np.array(ypm)
         size = 128.0 / 2**((gaiamags-mag))
-        plt.scatter(x+0.5,y+0.5,s=size,c='red',alpha=0.6, edgecolor=None,zorder = 10)
+        plt.scatter(x,y,s=size,c='red',alpha=0.6, edgecolor=None,zorder = 10)
         if args.PM:
             for i in range(len(x)):
-                plt.arrow(x[i]+0.5,y[i]+0.5, xpm[i]-x[i], (ypm[i]-y[i]), head_width=0.1, head_length=0.15, overhang=0.2,color='gray',alpha=0.8)
+                plt.arrow(x[i],y[i], xpm[i]-x[i], (ypm[i]-y[i]), head_width=0.1, head_length=0.15, overhang=0.2,color='gray',alpha=0.8)
 
         # Gaia source for the target
         this = np.where(np.array(res['Source']) == int(gaia_id))[0]
-        plt.scatter(x[this]+0.5,y[this]+0.5,marker='x',c='white',s=32,zorder = 11)
+        plt.scatter(x[this],y[this],marker='x',c='white',s=32,zorder = 11)
 
         # Legend
         add = 0
@@ -471,16 +481,16 @@ if __name__ == "__main__":
         ymin = tpf.row + 0.05*ny
         ymax = tpf.row + 0.95*ny
         for d,elem in enumerate(dsort):
-            if ( (x[elem]+0.5 < xmax) & (x[elem]+0.5 > xmin) & (y[elem]+0.5 < ymax) & (y[elem]+0.5 > ymin)  ):
-                plt.text(x[elem]+0.1+0.5,y[elem]+0.1+0.5,str(d+1),color='white', zorder=100,fontsize=14)
+            if ( (x[elem] < xmax) & (x[elem] > xmin) & (y[elem] < ymax) & (y[elem] > ymin)  ):
+                plt.text(x[elem]+0.1,y[elem]+0.1,str(d+1),color='white', zorder=100,fontsize=14)
 
         # Orientation arrows
         plot_orientation(tpf)
 
         # Labels and titles
         # Reverse x limits so that image plots as seen on the sky:
-        plt.xlim(tpf.column+ny+0.5,tpf.column+0.5)
-        plt.ylim(tpf.row+0.5,tpf.row+nx+0.5)
+        plt.xlim(tpf.column+ny-0.5,tpf.column-0.5)
+        plt.ylim(tpf.row-0.5,tpf.row+nx-0.5)
         plt.xlabel('Pixel Column Number', fontsize=16, zorder=200)
         plt.ylabel('Pixel Row Number', fontsize=16, zorder=200)
         if args.COORD is not False:                                                                                          #
@@ -505,9 +515,13 @@ if __name__ == "__main__":
         exponent = r'$\times 10^'+str(division)+'$'
         cb.set_label(r'Flux '+exponent+r' (e$^-$/s)', labelpad=10, fontsize=16)
 
-        plt.savefig('TPF_Gaia_TIC'+tic+'_S'+str(tpf.sector)+'.pdf')
+        if args.name[tt] is not None:
+            othername = '_'+args.name[tt].split('/')[0]
+        else:
+            othername = ''
+        plt.savefig(os.path.join(foldname,'TPF_Gaia'+othername+'_TIC'+tic+'_S'+str(tpf.sector)+'.pdf'))
         plt.close()
-        print('\t --> TPF plot written in file: '+'TPF_Gaia_TIC'+tic+'_S'+str(tpf.sector)+'.pdf')
+        print('\t --> TPF plot written in file: '+'TPF_Gaia'+othername+'_TIC'+tic+'_S'+str(tpf.sector)+'.pdf')
 
         # Save Gaia sources info
         if args.SAVEGAIA:
@@ -518,11 +532,14 @@ if __name__ == "__main__":
 
             IDs = np.arange(len(x))+1
             inside = np.zeros(len(x))
+            for i in range(len(x)):
+                print(IDs[i],GaiaID[i],x[i],y[i])
 
             for i in range(aperture.shape[0]):
                 for j in range(aperture.shape[1]):
                     if aperture_mask[i, j]:
                         xtpf, ytpf = j+tpf.column, i+tpf.row
+                        print(xtpf,ytpf,tpf.column,tpf.row)
                         _inside = np.where((x > xtpf) & (x < xtpf+1) &
                                             (y > ytpf) & (y < ytpf+1))[0]
                         inside[_inside] = 1
@@ -531,6 +548,6 @@ if __name__ == "__main__":
 
             data = Table([IDs, GaiaID, x, y, dist, dist*21., gaiamags, inside.astype('int')],
                         names=['# ID','GaiaID','x', 'y','Dist_pix','Dist_arcsec','Gmag', 'InAper'])
-            ascii.write(data, 'Gaia_TIC'+tic+'_S'+str(tpf.sector)+'.dat',overwrite=True)
-            print('\t --> Gaia close sources saved in file: '+'Gaia_TIC'+tic+'_S'+str(tpf.sector)+'.dat')
+            ascii.write(data, os.path.join(foldname,'Gaia'+othername+'_TIC'+tic+'_S'+str(tpf.sector)+'.dat'),overwrite=True)
+            print('\t --> Gaia close sources saved in file: '+'Gaia'+othername+'_TIC'+tic+'_S'+str(tpf.sector)+'.dat')
         print("\t --> Done!\n")
