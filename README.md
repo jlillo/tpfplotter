@@ -36,7 +36,7 @@ If you know the TIC number ():
 python tpfplotter.py 150428135 --maglim 6
 ```
 
-![alt text](images/TPF_Gaia_TIC150428135.jpg)
+![alt text](images/TPF_Gaia_TIC150428135_S1.jpg)
 
 Note: if the TIC is in the CTL, the mask will correspond to the pipeline mask. Otherwise, it will just show a mask obtained with tpf.create_threshold_mask(threshold=10,reference_pixel='center'):
 
@@ -79,7 +79,7 @@ As of June 8th, you can also plot the proper motion directions of all targets wi
 python tpfplotter.py 150428135 --maglim 6 --PM
 ```
 
-![alt text](images/TPF_Gaia_TIC150428135_PM.jpg)
+![alt text](images/TPF_Gaia_TIC150428135_S1_PM.jpg)
 
 ## Papers using tpfplotter
 Several papers involving different science cases have already used TPF plotter. A sample of them are highlighted here:
